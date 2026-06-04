@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 import { getAssignmentsForCycle, createAssignment, deleteAssignment, getMatrixWarnings } from '@/actions/assignments'
 import { getPeople } from '@/actions/people'
 import { Button } from '@/components/ui/button'
@@ -142,11 +143,16 @@ export default function MatrixPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Review Assignments</h2>
-        <p className="text-muted-foreground">
-          Select who is being reviewed, then assign their reviewers.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Review Assignments</h2>
+          <p className="text-muted-foreground">
+            Select who is being reviewed, then assign their reviewers.
+          </p>
+        </div>
+        <Link href={`/dashboard/admin/cycles/${cycleId}`}>
+          <Button variant="outline">Back to Cycle</Button>
+        </Link>
       </div>
 
       {/* Add subject */}
