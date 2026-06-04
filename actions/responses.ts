@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAuth } from './auth'
 import { revalidatePath } from 'next/cache'
 
@@ -56,9 +55,7 @@ export async function submitReview(assignmentId: string) {
     throw new Error('Not your assignment')
   }
 
-  // Use admin client since RLS only allows admin to update assignments
-  const admin = createAdminClient()
-  const { error } = await admin
+  const { error } = await supabase
     .from('review_assignments')
     .update({ completed_at: new Date().toISOString() })
     .eq('id', assignmentId)
