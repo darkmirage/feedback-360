@@ -6,6 +6,13 @@ import { Badge } from '@/components/ui/badge'
 import { RELATIONSHIP_LABELS } from '@/lib/constants'
 import { redirect } from 'next/navigation'
 
+const relationshipColors: Record<string, string> = {
+  self: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+  peer: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
+  direct_report: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+  manager: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+}
+
 export default async function MyResultsPage({
   params,
 }: {
@@ -31,47 +38,44 @@ export default async function MyResultsPage({
         <p className="text-muted-foreground">{cycle.title}</p>
       </div>
 
-      {results.groups.length === 0 ? (
+      {results.byQuestion.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
             No results available for you in this cycle.
           </CardContent>
         </Card>
       ) : (
-        results.groups.map((group) => (
-          <Card key={group.relationship}>
+        results.byQuestion.map((q) => (
+          <Card key={q.question_id}>
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-base">
-                  {RELATIONSHIP_LABELS[group.relationship]} Feedback
-                </CardTitle>
-                <Badge variant="outline">
-                  {group.responseCount} response{group.responseCount === 1 ? '' : 's'}
-                </Badge>
-              </div>
+              <CardTitle className="text-base">{q.question_text}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {group.questions.map((q) => (
-                <div key={q.question_id} className="space-y-2">
-                  <p className="text-sm font-medium">{q.question_text}</p>
-                  {q.averageRating !== null && (
-                    <p className="text-sm">
-                      Average rating: <span className="font-semibold">{q.averageRating}</span>/5
-                    </p>
-                  )}
-                  {q.openTextResponses.length > 0 ? (
-                    <ul className="space-y-1">
-                      {q.openTextResponses.map((text, i) => (
-                        <li key={i} className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
-                          {text}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">No responses</p>
-                  )}
+            <CardContent className="space-y-3">
+              {q.is_rating && q.overallAverageRating !== null && (
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-semibold">{q.overallAverageRating}</span>
+                  <span className="text-sm text-muted-foreground">/ 5 average</span>
                 </div>
-              ))}
+              )}
+              {q.taggedResponses.length > 0 ? (
+                <ul className="space-y-2">
+                  {q.taggedResponses.map((r, i) => (
+                    <li key={i} className="flex gap-2 items-start">
+                      <Badge
+                        variant="secondary"
+                        className={`text-[11px] mt-0.5 shrink-0 ${relationshipColors[r.relationship] ?? ''}`}
+                      >
+                        {RELATIONSHIP_LABELS[r.relationship] ?? r.relationship}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">{r.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                !q.is_rating && (
+                  <p className="text-sm text-muted-foreground italic">No text responses</p>
+                )
+              )}
             </CardContent>
           </Card>
         ))

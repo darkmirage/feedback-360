@@ -20,6 +20,14 @@ export interface SubjectResults {
   subject_email: string
   subject_name: string
   groups: AggregatedGroup[]
+  byQuestion: Array<{
+    question_id: string
+    question_text: string
+    question_order: number
+    is_rating: boolean
+    overallAverageRating: number | null
+    taggedResponses: Array<{ relationship: string; text: string }>
+  }>
 }
 
 export async function getResultsForSubject(cycleId: string, subjectEmail: string) {
@@ -124,11 +132,60 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
     ? `${person.first_name} ${person.last_name}`.trim() || subjectEmail
     : subjectEmail
 
+  // Build question-first view with tagged responses across all groups
+  const byQuestion = questions.map((q) => {
+    const taggedResponses: Array<{ relationship: string; text: string }> = []
+    let allRatings: number[] = []
+
+    for (const group of groups) {
+      const gq = group.questions.find((gq) => gq.question_id === q.id)
+      if (!gq) continue
+      for (const text of gq.openTextResponses) {
+        taggedResponses.push({ relationship: group.relationship, text })
+      }
+      if (gq.averageRating !== null) {
+        // Collect raw ratings for overall average
+        const groupAssignmentIds = byRelationship[group.relationship] ?? []
+        allRatings = allRatings.concat(
+          gq.openTextResponses.length > 0 || gq.averageRating !== null
+            ? Array(groupAssignmentIds.length).fill(gq.averageRating)
+            : []
+        )
+      }
+    }
+
+    // Compute overall average from all individual ratings across groups
+    let overallRatings: number[] = []
+    for (const group of groups) {
+      const gq = group.questions.find((gq) => gq.question_id === q.id)
+      if (!gq || gq.averageRating === null) continue
+      // Weight by group size
+      overallRatings.push(gq.averageRating * group.responseCount)
+    }
+    const totalResponders = groups.reduce((sum, g) => {
+      const gq = g.questions.find((gq) => gq.question_id === q.id)
+      return sum + (gq?.averageRating !== null ? g.responseCount : 0)
+    }, 0)
+    const overallAverage = totalResponders > 0
+      ? Math.round((overallRatings.reduce((a, b) => a + b, 0) / totalResponders) * 10) / 10
+      : null
+
+    return {
+      question_id: q.id,
+      question_text: q.question_text,
+      question_order: q.question_order,
+      is_rating: q.is_rating,
+      overallAverageRating: overallAverage,
+      taggedResponses,
+    }
+  })
+
   return {
     subject_email: subjectEmail,
     subject_name: subjectName,
     groups,
-  } satisfies SubjectResults
+    byQuestion,
+  }
 }
 
 export async function getAllSubjectResults(cycleId: string) {
