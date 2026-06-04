@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAuth } from '@/actions/auth'
 import { getResponsesForAssignment } from '@/actions/responses'
 import { getQuestions } from '@/actions/questions'
@@ -12,22 +12,22 @@ export default async function ReviewPage({
 }) {
   const { assignmentId } = await params
   const user = await requireAuth()
-  const supabase = await createClient()
+  const admin = createAdminClient()
 
-  // Get the assignment and verify it belongs to this user
-  const { data: assignment, error } = await supabase
-    .from('review_assignments')
-    .select('*, subject:users!subject_id(full_name), review_cycle:review_cycles!review_cycle_id(id, title, status)')
+  // Get the assignment from the view for resolved names
+  const { data: assignment, error } = await admin
+    .from('assignment_details')
+    .select('*, review_cycle:review_cycles!review_cycle_id(id, title, status)')
     .eq('id', assignmentId)
     .single()
 
   if (error || !assignment) redirect('/dashboard')
-  if (assignment.reviewer_id !== user.id) redirect('/dashboard')
+  if (assignment.reviewer_email.toLowerCase() !== user.email.toLowerCase()) redirect('/dashboard')
 
   const cycle = assignment.review_cycle as unknown as { id: string; title: string; status: string }
   if (cycle.status !== 'active') redirect('/dashboard')
 
-  const subject = assignment.subject as unknown as { full_name: string }
+  const subjectName = assignment.subject_name ?? assignment.subject_email
   const questions = await getQuestions(cycle.id)
   const existingResponses = await getResponsesForAssignment(assignmentId)
 
@@ -36,7 +36,7 @@ export default async function ReviewPage({
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Review for {subject.full_name}</h2>
+        <h2 className="text-2xl font-bold">Review for {subjectName}</h2>
         <p className="text-muted-foreground">{cycle.title}</p>
         {isCompleted && (
           <p className="text-sm text-green-600 font-medium mt-1">

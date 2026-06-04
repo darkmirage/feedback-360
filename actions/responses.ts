@@ -43,15 +43,17 @@ export async function submitReview(assignmentId: string) {
   const user = await requireAuth()
   const supabase = await createClient()
 
-  // Verify the assignment belongs to this user
+  // Verify the assignment belongs to this user by email
   const { data: assignment, error: fetchError } = await supabase
     .from('review_assignments')
-    .select('reviewer_id')
+    .select('reviewer_email')
     .eq('id', assignmentId)
     .single()
 
   if (fetchError || !assignment) throw new Error('Assignment not found')
-  if (assignment.reviewer_id !== user.id) throw new Error('Not your assignment')
+  if (assignment.reviewer_email.toLowerCase() !== user.email.toLowerCase()) {
+    throw new Error('Not your assignment')
+  }
 
   const { error } = await supabase
     .from('review_assignments')

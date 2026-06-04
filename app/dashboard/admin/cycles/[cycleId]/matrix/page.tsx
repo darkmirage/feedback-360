@@ -6,30 +6,25 @@ import { getAssignmentsForCycle, createAssignment, deleteAssignment, getMatrixWa
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { RELATIONSHIP_LABELS, ANONYMITY_THRESHOLD } from '@/lib/constants'
 import type { RelationshipType } from '@/lib/types/database'
 import { toast } from 'sonner'
 
-interface UserInfo {
-  id: string
-  full_name: string
-  email: string
-}
-
 interface Assignment {
   id: string
-  reviewer_id: string
-  subject_id: string
+  reviewer_email: string
+  subject_email: string
+  reviewer_name: string | null
+  subject_name: string | null
   relationship: RelationshipType
   completed_at: string | null
-  reviewer: UserInfo
-  subject: UserInfo
 }
 
 interface Warning {
-  subject_id: string
+  subject_email: string
   relationship: string
   count: number
 }
@@ -39,37 +34,26 @@ export default function MatrixPage() {
   const cycleId = params.cycleId as string
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [warnings, setWarnings] = useState<Warning[]>([])
-  const [users, setUsers] = useState<UserInfo[]>([])
   const [loading, setLoading] = useState(true)
-  const [newReviewerId, setNewReviewerId] = useState('')
-  const [newSubjectId, setNewSubjectId] = useState('')
-  const [newRelationship, setNewRelationship] = useState<RelationshipType>('peer')
+  const [reviewerEmail, setReviewerEmail] = useState('')
+  const [subjectEmail, setSubjectEmail] = useState('')
+  const [relationship, setRelationship] = useState<RelationshipType>('peer')
 
   const loadData = async () => {
     try {
       const data = await getAssignmentsForCycle(cycleId)
-      const mapped = data.map((d) => ({
-        id: d.id,
-        reviewer_id: d.reviewer_id,
-        subject_id: d.subject_id,
+      setAssignments(data.map((d: Record<string, unknown>) => ({
+        id: d.id as string,
+        reviewer_email: d.reviewer_email as string,
+        subject_email: d.subject_email as string,
+        reviewer_name: d.reviewer_name as string | null,
+        subject_name: d.subject_name as string | null,
         relationship: d.relationship as RelationshipType,
-        completed_at: d.completed_at,
-        reviewer: d.reviewer as unknown as UserInfo,
-        subject: d.subject as unknown as UserInfo,
-      }))
-      setAssignments(mapped)
-
-      // Extract unique users from assignments
-      const userMap = new Map<string, UserInfo>()
-      for (const a of mapped) {
-        if (!userMap.has(a.reviewer.id)) userMap.set(a.reviewer.id, a.reviewer)
-        if (!userMap.has(a.subject.id)) userMap.set(a.subject.id, a.subject)
-      }
-      setUsers(Array.from(userMap.values()))
-
+        completed_at: d.completed_at as string | null,
+      })))
       const w = await getMatrixWarnings(cycleId)
       setWarnings(w)
-    } catch (err) {
+    } catch {
       toast.error('Failed to load assignments')
     } finally {
       setLoading(false)
@@ -81,22 +65,28 @@ export default function MatrixPage() {
   }, [cycleId])
 
   const handleAdd = async () => {
-    if (!newReviewerId || !newSubjectId) {
-      toast.error('Select both a reviewer and a subject')
+    if (!reviewerEmail.trim() || !subjectEmail.trim()) {
+      toast.error('Enter both reviewer and subject email addresses')
+      return
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(reviewerEmail) || !emailRegex.test(subjectEmail)) {
+      toast.error('Please enter valid email addresses')
       return
     }
     try {
       await createAssignment({
         review_cycle_id: cycleId,
-        reviewer_id: newReviewerId,
-        subject_id: newSubjectId,
-        relationship: newRelationship,
+        reviewer_email: reviewerEmail.trim(),
+        subject_email: subjectEmail.trim(),
+        relationship,
       })
       toast.success('Assignment added')
-      setNewReviewerId('')
-      setNewSubjectId('')
+      setReviewerEmail('')
+      setSubjectEmail('')
       await loadData()
-    } catch (err) {
+    } catch {
       toast.error('Failed to add assignment (may already exist)')
     }
   }
@@ -113,9 +103,6 @@ export default function MatrixPage() {
 
   if (loading) return <p className="text-muted-foreground">Loading...</p>
 
-  // Get all users from Supabase for the dropdowns - we'll use the ones we know about
-  // In a real scenario you'd fetch all users, but for a small team the assignment list covers it
-
   return (
     <div className="max-w-4xl space-y-6">
       <h2 className="text-2xl font-bold">Rater Matrix</h2>
@@ -131,12 +118,12 @@ export default function MatrixPage() {
           <CardContent>
             <ul className="list-disc list-inside text-sm space-y-1">
               {warnings.map((w, i) => {
-                const subjectName = assignments.find(
-                  (a) => a.subject_id === w.subject_id
-                )?.subject.full_name ?? w.subject_id
+                const name = assignments.find(
+                  (a) => a.subject_email === w.subject_email
+                )?.subject_name ?? w.subject_email
                 return (
                   <li key={i}>
-                    {subjectName} - {RELATIONSHIP_LABELS[w.relationship]}: {w.count} reviewer{w.count === 1 ? '' : 's'}
+                    {name} - {RELATIONSHIP_LABELS[w.relationship]}: {w.count} reviewer{w.count === 1 ? '' : 's'}
                   </li>
                 )
               })}
@@ -149,54 +136,32 @@ export default function MatrixPage() {
         <CardHeader>
           <CardTitle className="text-base">Add Assignment</CardTitle>
           <CardDescription>
-            Enter user IDs or select from known users. New users must sign in first.
+            Enter email addresses. Users don&apos;t need to have signed in yet.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3 items-end">
-            <div className="space-y-1 flex-1 min-w-[180px]">
-              <label className="text-sm font-medium">Reviewer</label>
-              {users.length > 0 ? (
-                <Select value={newReviewerId} onValueChange={(v) => setNewReviewerId(v ?? '')}>
-                  <SelectTrigger><SelectValue placeholder="Select reviewer" /></SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <input
-                  className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
-                  placeholder="User ID"
-                  value={newReviewerId}
-                  onChange={(e) => setNewReviewerId(e.target.value)}
-                />
-              )}
+            <div className="space-y-1 flex-1 min-w-[200px]">
+              <label className="text-sm font-medium">Reviewer email</label>
+              <Input
+                type="email"
+                placeholder="reviewer@example.com"
+                value={reviewerEmail}
+                onChange={(e) => setReviewerEmail(e.target.value)}
+              />
             </div>
-            <div className="space-y-1 flex-1 min-w-[180px]">
-              <label className="text-sm font-medium">Subject</label>
-              {users.length > 0 ? (
-                <Select value={newSubjectId} onValueChange={(v) => setNewSubjectId(v ?? '')}>
-                  <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <input
-                  className="flex h-9 w-full rounded-md border px-3 py-1 text-sm"
-                  placeholder="User ID"
-                  value={newSubjectId}
-                  onChange={(e) => setNewSubjectId(e.target.value)}
-                />
-              )}
+            <div className="space-y-1 flex-1 min-w-[200px]">
+              <label className="text-sm font-medium">Subject email</label>
+              <Input
+                type="email"
+                placeholder="subject@example.com"
+                value={subjectEmail}
+                onChange={(e) => setSubjectEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-1 min-w-[140px]">
               <label className="text-sm font-medium">Relationship</label>
-              <Select value={newRelationship} onValueChange={(v) => v && setNewRelationship(v as RelationshipType)}>
+              <Select value={relationship} onValueChange={(v) => v && setRelationship(v as RelationshipType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(RELATIONSHIP_LABELS).map(([k, v]) => (
@@ -226,8 +191,36 @@ export default function MatrixPage() {
               <TableBody>
                 {assignments.map((a) => (
                   <TableRow key={a.id}>
-                    <TableCell>{a.reviewer.full_name}</TableCell>
-                    <TableCell>{a.subject.full_name}</TableCell>
+                    <TableCell>
+                      <div>
+                        {a.reviewer_name ? (
+                          <>
+                            <span className="font-medium">{a.reviewer_name}</span>
+                            <span className="text-xs text-muted-foreground ml-1">({a.reviewer_email})</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>{a.reviewer_email}</span>
+                            <Badge variant="outline" className="ml-2 text-xs">invited</Badge>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        {a.subject_name ? (
+                          <>
+                            <span className="font-medium">{a.subject_name}</span>
+                            <span className="text-xs text-muted-foreground ml-1">({a.subject_email})</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>{a.subject_email}</span>
+                            <Badge variant="outline" className="ml-2 text-xs">invited</Badge>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">
                         {RELATIONSHIP_LABELS[a.relationship]}

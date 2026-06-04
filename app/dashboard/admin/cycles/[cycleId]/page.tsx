@@ -19,7 +19,7 @@ export default async function CycleDetailPage({
   const assignments = await getAssignmentsForCycle(cycleId)
   const warnings = await getMatrixWarnings(cycleId)
 
-  const completedCount = assignments.filter((a) => a.completed_at).length
+  const completedCount = assignments.filter((a: Record<string, unknown>) => a.completed_at).length
   const totalCount = assignments.length
 
   const nextStatus = VALID_TRANSITIONS[cycle.status]
@@ -90,7 +90,7 @@ export default async function CycleDetailPage({
             <ul className="list-disc list-inside text-sm space-y-1">
               {warnings.map((w, i) => (
                 <li key={i}>
-                  {w.relationship} group: only {w.count} reviewer{w.count === 1 ? '' : 's'}
+                  {w.subject_email} — {w.relationship} group: only {w.count} reviewer{w.count === 1 ? '' : 's'}
                 </li>
               ))}
             </ul>

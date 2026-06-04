@@ -19,7 +19,7 @@ export default async function MyResultsPage({
 
   let results
   try {
-    results = await getResultsForSubject(cycleId, user.id)
+    results = await getResultsForSubject(cycleId, user.email)
   } catch {
     redirect('/dashboard')
   }

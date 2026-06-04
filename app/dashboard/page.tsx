@@ -12,7 +12,6 @@ export default async function DashboardPage() {
   const assignments = await getMyAssignments()
   const cycles = await getCycles()
 
-  const activeCycles = cycles.filter((c) => c.status === 'active')
   const publishedCycles = cycles.filter((c) => c.status === 'results_published')
 
   const pendingAssignments = assignments.filter(
@@ -37,21 +36,21 @@ export default async function DashboardPage() {
         <section>
           <h3 className="text-lg font-semibold mb-3">Pending Reviews</h3>
           <div className="space-y-3">
-            {pendingAssignments.map((a) => {
-              const subject = a.subject as unknown as { id: string; full_name: string }
+            {pendingAssignments.map((a: Record<string, unknown>) => {
+              const subjectName = (a.subject_name as string) ?? (a.subject_email as string)
               const cycle = a.review_cycle as unknown as { id: string; title: string }
               return (
-                <Card key={a.id}>
+                <Card key={a.id as string}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-base">
-                          Review for {subject.full_name}
+                          Review for {subjectName}
                         </CardTitle>
                         <CardDescription>{cycle.title}</CardDescription>
                       </div>
                       <Badge variant="outline">
-                        {RELATIONSHIP_LABELS[a.relationship] || a.relationship}
+                        {RELATIONSHIP_LABELS[a.relationship as string] || (a.relationship as string)}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -71,16 +70,16 @@ export default async function DashboardPage() {
         <section>
           <h3 className="text-lg font-semibold mb-3">Completed Reviews</h3>
           <div className="space-y-3">
-            {completedAssignments.map((a) => {
-              const subject = a.subject as unknown as { id: string; full_name: string }
+            {completedAssignments.map((a: Record<string, unknown>) => {
+              const subjectName = (a.subject_name as string) ?? (a.subject_email as string)
               const cycle = a.review_cycle as unknown as { id: string; title: string }
               return (
-                <Card key={a.id} className="opacity-70">
+                <Card key={a.id as string} className="opacity-70">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-base">
-                          Review for {subject.full_name}
+                          Review for {subjectName}
                         </CardTitle>
                         <CardDescription>{cycle.title}</CardDescription>
                       </div>

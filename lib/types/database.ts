@@ -95,8 +95,8 @@ export interface Database {
         Row: {
           id: string
           review_cycle_id: string
-          reviewer_id: string
-          subject_id: string
+          reviewer_email: string
+          subject_email: string
           relationship: RelationshipType
           completed_at: string | null
           created_at: string
@@ -104,8 +104,8 @@ export interface Database {
         Insert: {
           id?: string
           review_cycle_id: string
-          reviewer_id: string
-          subject_id: string
+          reviewer_email: string
+          subject_email: string
           relationship: RelationshipType
           completed_at?: string | null
           created_at?: string
@@ -113,8 +113,8 @@ export interface Database {
         Update: {
           id?: string
           review_cycle_id?: string
-          reviewer_id?: string
-          subject_id?: string
+          reviewer_email?: string
+          subject_email?: string
           relationship?: RelationshipType
           completed_at?: string | null
           created_at?: string

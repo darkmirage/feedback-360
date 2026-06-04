@@ -23,9 +23,9 @@ export default async function AdminResultsPage({
       </div>
 
       {subjects.map(async (subject) => {
-        const results = await getResultsForSubject(cycleId, subject.id)
+        const results = await getResultsForSubject(cycleId, subject.email)
         return (
-          <Card key={subject.id}>
+          <Card key={subject.email}>
             <CardHeader>
               <CardTitle>{subject.full_name}</CardTitle>
             </CardHeader>

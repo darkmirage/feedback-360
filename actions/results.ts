@@ -18,15 +18,15 @@ interface AggregatedGroup {
 }
 
 export interface SubjectResults {
-  subject_id: string
+  subject_email: string
   subject_name: string
   groups: AggregatedGroup[]
 }
 
-export async function getResultsForSubject(cycleId: string, subjectId: string) {
+export async function getResultsForSubject(cycleId: string, subjectEmail: string) {
   const user = await requireAuth()
   const isAdmin = user.role === 'admin'
-  const isSelf = user.id === subjectId
+  const isSelf = user.email.toLowerCase() === subjectEmail.toLowerCase()
 
   if (!isAdmin && !isSelf) {
     throw new Error('You can only view your own results')
@@ -46,12 +46,12 @@ export async function getResultsForSubject(cycleId: string, subjectId: string) {
     throw new Error('Results are not yet published')
   }
 
-  // Get all assignments for this subject in this cycle
+  // Get all completed assignments for this subject in this cycle
   const { data: assignments, error: assignError } = await admin
     .from('review_assignments')
     .select('id, relationship, completed_at')
     .eq('review_cycle_id', cycleId)
-    .eq('subject_id', subjectId)
+    .eq('subject_email', subjectEmail.toLowerCase())
     .not('completed_at', 'is', null)
 
   if (assignError) throw new Error(assignError.message)
@@ -130,16 +130,16 @@ export async function getResultsForSubject(cycleId: string, subjectId: string) {
     })
   }
 
-  // Get subject name
+  // Get subject name (may not exist if user hasn't signed in)
   const { data: subject } = await admin
     .from('users')
     .select('full_name')
-    .eq('id', subjectId)
+    .eq('email', subjectEmail.toLowerCase())
     .single()
 
   return {
-    subject_id: subjectId,
-    subject_name: subject?.full_name ?? 'Unknown',
+    subject_email: subjectEmail,
+    subject_name: subject?.full_name ?? subjectEmail,
     groups,
   } satisfies SubjectResults
 }
@@ -152,22 +152,21 @@ export async function getAllSubjectResults(cycleId: string) {
 
   // Get all unique subjects in this cycle
   const { data: assignments, error } = await admin
-    .from('review_assignments')
-    .select('subject_id, subject:users!subject_id(full_name)')
+    .from('assignment_details')
+    .select('subject_email, subject_name')
     .eq('review_cycle_id', cycleId)
 
   if (error) throw new Error(error.message)
 
   const uniqueSubjects = new Map<string, string>()
   for (const a of assignments) {
-    if (!uniqueSubjects.has(a.subject_id)) {
-      const subject = a.subject as unknown as { full_name: string }
-      uniqueSubjects.set(a.subject_id, subject.full_name)
+    if (!uniqueSubjects.has(a.subject_email)) {
+      uniqueSubjects.set(a.subject_email, a.subject_name ?? a.subject_email)
     }
   }
 
-  return Array.from(uniqueSubjects.entries()).map(([id, name]) => ({
-    id,
+  return Array.from(uniqueSubjects.entries()).map(([email, name]) => ({
+    email,
     full_name: name,
   }))
 }

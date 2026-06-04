@@ -11,9 +11,10 @@ export async function getAssignmentsForCycle(cycleId: string) {
   await requireAdmin()
   const admin = createAdminClient()
 
+  // Use the assignment_details view for resolved names
   const { data, error } = await admin
-    .from('review_assignments')
-    .select('*, reviewer:users!reviewer_id(id, full_name, email), subject:users!subject_id(id, full_name, email)')
+    .from('assignment_details')
+    .select('*')
     .eq('review_cycle_id', cycleId)
     .order('created_at')
 
@@ -23,8 +24,8 @@ export async function getAssignmentsForCycle(cycleId: string) {
 
 export async function createAssignment(params: {
   review_cycle_id: string
-  reviewer_id: string
-  subject_id: string
+  reviewer_email: string
+  subject_email: string
   relationship: RelationshipType
 }) {
   await requireAdmin()
@@ -34,8 +35,8 @@ export async function createAssignment(params: {
     .from('review_assignments')
     .insert({
       review_cycle_id: params.review_cycle_id,
-      reviewer_id: params.reviewer_id,
-      subject_id: params.subject_id,
+      reviewer_email: params.reviewer_email.toLowerCase().trim(),
+      subject_email: params.subject_email.toLowerCase().trim(),
       relationship: params.relationship,
     })
 
@@ -58,12 +59,13 @@ export async function deleteAssignment(assignmentId: string, cycleId: string) {
 
 export async function getMyAssignments() {
   const user = await requireAuth()
-  const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const { data, error } = await supabase
-    .from('review_assignments')
-    .select('*, subject:users!subject_id(id, full_name), review_cycle:review_cycles!review_cycle_id(id, title, status)')
-    .eq('reviewer_id', user.id)
+  // Use admin client to query the view (RLS doesn't apply to views by default)
+  const { data, error } = await admin
+    .from('assignment_details')
+    .select('*, review_cycle:review_cycles!review_cycle_id(id, title, status)')
+    .eq('reviewer_email', user.email.toLowerCase())
 
   if (error) throw new Error(error.message)
   return data
@@ -75,7 +77,7 @@ export async function getMatrixWarnings(cycleId: string) {
 
   const { data: assignments, error } = await admin
     .from('review_assignments')
-    .select('subject_id, relationship')
+    .select('subject_email, relationship')
     .eq('review_cycle_id', cycleId)
     .neq('relationship', 'self')
 
@@ -84,15 +86,15 @@ export async function getMatrixWarnings(cycleId: string) {
   // Group by subject + relationship and find groups below threshold
   const groups: Record<string, number> = {}
   for (const a of assignments) {
-    const key = `${a.subject_id}:${a.relationship}`
+    const key = `${a.subject_email}:${a.relationship}`
     groups[key] = (groups[key] || 0) + 1
   }
 
-  const warnings: Array<{ subject_id: string; relationship: string; count: number }> = []
+  const warnings: Array<{ subject_email: string; relationship: string; count: number }> = []
   for (const [key, count] of Object.entries(groups)) {
     if (count < ANONYMITY_THRESHOLD) {
-      const [subject_id, relationship] = key.split(':')
-      warnings.push({ subject_id, relationship, count })
+      const [subject_email, relationship] = key.split(':')
+      warnings.push({ subject_email, relationship, count })
     }
   }
 
