@@ -63,6 +63,31 @@ export async function transitionCycle(cycleId: string, currentStatus: ReviewCycl
   return nextStatus
 }
 
+export async function revertCycleToDraft(cycleId: string) {
+  await requireAdmin()
+  const admin = createAdminClient()
+
+  // Only allow reverting from 'active' status
+  const { data: cycle, error: fetchError } = await admin
+    .from('review_cycles')
+    .select('status')
+    .eq('id', cycleId)
+    .single()
+
+  if (fetchError || !cycle) throw new Error('Cycle not found')
+  if (cycle.status !== 'active') throw new Error('Can only revert active cycles to draft')
+
+  const { error } = await admin
+    .from('review_cycles')
+    .update({ status: 'draft' })
+    .eq('id', cycleId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath(`/dashboard/admin/cycles/${cycleId}`)
+  revalidatePath('/dashboard/admin')
+  revalidatePath('/dashboard')
+}
+
 export async function deleteCycle(cycleId: string) {
   await requireAdmin()
   const supabase = await createClient()

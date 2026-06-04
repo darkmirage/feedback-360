@@ -8,6 +8,7 @@ import { CYCLE_STATUS_LABELS, VALID_TRANSITIONS } from '@/lib/constants'
 import Link from 'next/link'
 import { CycleTransitionButton } from '@/components/admin/cycle-transition-button'
 import { DeleteCycleButton } from '@/components/admin/delete-cycle-button'
+import { RevertCycleButton } from '@/components/admin/revert-cycle-button'
 
 export default async function CycleDetailPage({
   params,
@@ -121,6 +122,10 @@ export default async function CycleDetailPage({
         <Link href={`/dashboard/admin/cycles/${cycleId}/results`}>
           <Button>View All Results</Button>
         </Link>
+      )}
+
+      {cycle.status === 'active' && (
+        <RevertCycleButton cycleId={cycleId} />
       )}
 
       {cycle.status === 'draft' && (
