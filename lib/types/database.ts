@@ -70,6 +70,7 @@ export interface Database {
           question_order: number
           is_open_ended: boolean
           is_rating: boolean
+          is_required: boolean
           created_at: string
         }
         Insert: {
@@ -79,6 +80,7 @@ export interface Database {
           question_order: number
           is_open_ended?: boolean
           is_rating?: boolean
+          is_required?: boolean
           created_at?: string
         }
         Update: {
@@ -88,6 +90,7 @@ export interface Database {
           question_order?: number
           is_open_ended?: boolean
           is_rating?: boolean
+          is_required?: boolean
           created_at?: string
         }
       }

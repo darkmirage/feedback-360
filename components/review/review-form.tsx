@@ -85,6 +85,22 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isSubmi
   }
 
   const handleSubmit = async () => {
+    // Validate required questions
+    for (const q of questions) {
+      if (!q.is_required) continue
+      const r = responses[q.id]
+      const hasText = q.is_open_ended && r?.open_text?.trim()
+      const hasRating = q.is_rating && r?.rating_value !== null
+      if (q.is_open_ended && !hasText) {
+        toast.error(`Please answer: "${q.question_text}"`)
+        return
+      }
+      if (q.is_rating && !hasRating) {
+        toast.error(`Please provide a rating for: "${q.question_text}"`)
+        return
+      }
+    }
+
     setSubmitting(true)
     try {
       Object.values(debounceTimers.current).forEach(clearTimeout)
@@ -116,7 +132,10 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isSubmi
         <Card key={q.id}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">{q.question_text}</CardTitle>
+              <CardTitle className="text-base">
+                {q.question_text}
+                {q.is_required && <span className="text-destructive ml-1">*</span>}
+              </CardTitle>
               {saving[q.id] && (
                 <Badge variant="outline" className="text-xs">Saving...</Badge>
               )}

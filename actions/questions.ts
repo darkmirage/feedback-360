@@ -54,6 +54,7 @@ export async function upsertQuestion(params: {
   question_order: number
   is_open_ended?: boolean
   is_rating?: boolean
+  is_required?: boolean
 }) {
   await requireAdmin()
   const supabase = await createClient()
@@ -69,6 +70,7 @@ export async function upsertQuestion(params: {
         question_order: params.question_order,
         is_open_ended: params.is_open_ended ?? true,
         is_rating: params.is_rating ?? false,
+        is_required: params.is_required ?? false,
       })
       .eq('id', params.id)
     if (error) throw new Error(error.message)
@@ -81,6 +83,7 @@ export async function upsertQuestion(params: {
         question_order: params.question_order,
         is_open_ended: params.is_open_ended ?? true,
         is_rating: params.is_rating ?? false,
+        is_required: params.is_required ?? false,
       })
     if (error) throw new Error(error.message)
   }

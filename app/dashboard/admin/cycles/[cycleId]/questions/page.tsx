@@ -15,6 +15,7 @@ interface Question {
   question_order: number
   is_open_ended: boolean
   is_rating: boolean
+  is_required: boolean
 }
 
 export default function QuestionsPage() {
@@ -32,6 +33,7 @@ export default function QuestionsPage() {
         question_order: q.question_order,
         is_open_ended: q.is_open_ended,
         is_rating: q.is_rating,
+        is_required: q.is_required,
       })))
       setLoading(false)
     })
@@ -45,6 +47,7 @@ export default function QuestionsPage() {
         question_order: questions.length + 1,
         is_open_ended: true,
         is_rating: false,
+        is_required: false,
       },
     ])
   }
@@ -81,6 +84,7 @@ export default function QuestionsPage() {
           question_order: i + 1,
           is_open_ended: q.is_open_ended,
           is_rating: q.is_rating,
+          is_required: q.is_required,
         })
       }
       toast.success('Questions saved')
@@ -136,6 +140,14 @@ export default function QuestionsPage() {
                       onChange={(e) => updateQuestion(i, 'is_rating', e.target.checked)}
                     />
                     Include rating (1-5)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={q.is_required}
+                      onChange={(e) => updateQuestion(i, 'is_required', e.target.checked)}
+                    />
+                    Required
                   </label>
                   <Button
                     variant="ghost"

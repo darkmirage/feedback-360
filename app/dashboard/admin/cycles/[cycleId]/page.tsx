@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { CycleTransitionButton } from '@/components/admin/cycle-transition-button'
 import { DeleteCycleButton } from '@/components/admin/delete-cycle-button'
 import { RevertCycleButton } from '@/components/admin/revert-cycle-button'
+import { CompletionBreakdown } from '@/components/admin/completion-breakdown'
 
 export default async function CycleDetailPage({
   params,
@@ -20,8 +21,16 @@ export default async function CycleDetailPage({
   const questions = await getQuestions(cycleId)
   const assignments = await getAssignmentsForCycle(cycleId)
 
-  const completedCount = assignments.filter((a: Record<string, unknown>) => a.completed_at).length
   const totalCount = assignments.length
+
+  const assignmentList = assignments.map((a: Record<string, unknown>) => ({
+    reviewer_email: a.reviewer_email as string,
+    reviewer_name: a.reviewer_name as string | null,
+    subject_email: a.subject_email as string,
+    subject_name: a.subject_name as string | null,
+    completed_at: a.completed_at as string | null,
+    relationship: a.relationship as string,
+  }))
 
   const nextStatus = VALID_TRANSITIONS[cycle.status]
 
@@ -64,20 +73,9 @@ export default async function CycleDetailPage({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Completed</CardDescription>
-            <CardTitle>{completedCount} / {totalCount}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {totalCount > 0
-                ? `${Math.round((completedCount / totalCount) * 100)}%`
-                : 'No assignments'}
-            </p>
-          </CardContent>
-        </Card>
       </div>
+
+      <CompletionBreakdown assignments={assignmentList} />
 
       {nextStatus && (
         <Card>
