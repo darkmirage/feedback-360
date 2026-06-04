@@ -48,7 +48,7 @@ export default async function CycleDetailPage({
         </Badge>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Questions</CardDescription>
@@ -76,6 +76,7 @@ export default async function CycleDetailPage({
       </div>
 
       <CompletionBreakdown assignments={assignmentList} />
+
 
       {nextStatus && (
         <Card>
