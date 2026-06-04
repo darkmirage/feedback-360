@@ -178,8 +178,11 @@ export default function RosterPage() {
             type="file"
             accept=".csv"
             onChange={handleCSV}
-            className="text-sm"
+            className="hidden"
           />
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            Choose CSV file
+          </Button>
         </CardContent>
       </Card>
 
