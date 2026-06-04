@@ -107,9 +107,7 @@ export default async function CycleDetailPage({
         <RevertCycleButton cycleId={cycleId} />
       )}
 
-      {cycle.status === 'draft' && (
-        <DeleteCycleButton cycleId={cycleId} />
-      )}
+      <DeleteCycleButton cycleId={cycleId} />
     </div>
   )
 }

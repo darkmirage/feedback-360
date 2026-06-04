@@ -90,13 +90,14 @@ export async function revertCycleToDraft(cycleId: string) {
 
 export async function deleteCycle(cycleId: string) {
   await requireAdmin()
-  const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const { error } = await supabase
+  const { error } = await admin
     .from('review_cycles')
     .delete()
     .eq('id', cycleId)
 
   if (error) throw new Error(error.message)
   revalidatePath('/dashboard/admin')
+  revalidatePath('/dashboard')
 }
