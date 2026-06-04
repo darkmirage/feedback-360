@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { signOut } from '@/actions/auth'
+import { usePathname, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import type { Database } from '@/lib/types/database'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,13 @@ type User = Database['public']['Tables']['users']['Row']
 
 export function NavSidebar({ user }: { user: User }) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   const navItems = [
     { href: '/dashboard', label: 'My Reviews' },
@@ -47,11 +54,9 @@ export function NavSidebar({ user }: { user: User }) {
         <p className="text-xs text-muted-foreground truncate max-w-[120px]">
           {user.full_name}
         </p>
-        <form action={signOut}>
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground px-2">
-            Sign out
-          </Button>
-        </form>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground px-2" onClick={handleSignOut}>
+          Sign out
+        </Button>
       </div>
     </aside>
   )
