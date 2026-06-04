@@ -31,16 +31,16 @@ export default async function ReviewPage({
   const questions = await getQuestions(cycle.id)
   const existingResponses = await getResponsesForAssignment(assignmentId)
 
-  const isCompleted = !!assignment.completed_at
+  const isSubmitted = !!assignment.completed_at
 
   return (
     <div className="max-w-2xl space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Review for {subjectName}</h2>
         <p className="text-muted-foreground">{cycle.title}</p>
-        {isCompleted && (
+        {isSubmitted && (
           <p className="text-sm text-green-600 font-medium mt-1">
-            This review has been submitted.
+            Submitted — you can still edit until the cycle closes.
           </p>
         )}
       </div>
@@ -49,7 +49,7 @@ export default async function ReviewPage({
         assignmentId={assignmentId}
         questions={questions}
         existingResponses={existingResponses}
-        isCompleted={isCompleted}
+        isSubmitted={isSubmitted}
       />
     </div>
   )

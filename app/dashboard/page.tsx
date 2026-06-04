@@ -19,7 +19,11 @@ export default async function DashboardPage() {
       !a.completed_at &&
       (a.review_cycle as unknown as { status: string })?.status === 'active'
   )
-  const completedAssignments = assignments.filter((a) => !!a.completed_at)
+  const completedAssignments = assignments.filter(
+    (a) =>
+      !!a.completed_at &&
+      (a.review_cycle as unknown as { status: string })?.status === 'active'
+  )
 
   return (
     <div className="max-w-3xl space-y-8">
@@ -74,7 +78,7 @@ export default async function DashboardPage() {
               const subjectName = (a.subject_name as string) ?? (a.subject_email as string)
               const cycle = a.review_cycle as unknown as { id: string; title: string }
               return (
-                <Card key={a.id as string} className="opacity-70">
+                <Card key={a.id as string}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div>
@@ -83,9 +87,14 @@ export default async function DashboardPage() {
                         </CardTitle>
                         <CardDescription>{cycle.title}</CardDescription>
                       </div>
-                      <Badge variant="secondary">Completed</Badge>
+                      <Badge variant="secondary">Submitted</Badge>
                     </div>
                   </CardHeader>
+                  <CardContent>
+                    <Link href={`/dashboard/review/${a.id}`}>
+                      <Button size="sm" variant="outline">Edit Review</Button>
+                    </Link>
+                  </CardContent>
                 </Card>
               )
             })}

@@ -18,10 +18,10 @@ interface ReviewFormProps {
   assignmentId: string
   questions: Question[]
   existingResponses: Response[]
-  isCompleted: boolean
+  isSubmitted: boolean
 }
 
-export function ReviewForm({ assignmentId, questions, existingResponses, isCompleted }: ReviewFormProps) {
+export function ReviewForm({ assignmentId, questions, existingResponses, isSubmitted }: ReviewFormProps) {
   const router = useRouter()
   const [responses, setResponses] = useState<Record<string, { open_text: string; rating_value: number | null }>>(() => {
     const initial: Record<string, { open_text: string; rating_value: number | null }> = {}
@@ -38,7 +38,6 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isCompl
   const [submitting, setSubmitting] = useState(false)
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({})
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       Object.values(debounceTimers.current).forEach(clearTimeout)
@@ -74,9 +73,7 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isCompl
       ...prev,
       [questionId]: { ...prev[questionId], open_text: value },
     }))
-    if (!isCompleted) {
-      debouncedSave(questionId, value, responses[questionId]?.rating_value ?? null)
-    }
+    debouncedSave(questionId, value, responses[questionId]?.rating_value ?? null)
   }
 
   const handleRatingChange = (questionId: string, value: number) => {
@@ -84,15 +81,12 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isCompl
       ...prev,
       [questionId]: { ...prev[questionId], rating_value: value },
     }))
-    if (!isCompleted) {
-      debouncedSave(questionId, responses[questionId]?.open_text ?? '', value)
-    }
+    debouncedSave(questionId, responses[questionId]?.open_text ?? '', value)
   }
 
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      // Flush any pending saves
       Object.values(debounceTimers.current).forEach(clearTimeout)
       for (const q of questions) {
         const r = responses[q.id]
@@ -109,7 +103,7 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isCompl
       await submitReview(assignmentId)
       toast.success('Review submitted')
       router.push('/dashboard')
-    } catch (err) {
+    } catch {
       toast.error('Failed to submit review')
     } finally {
       setSubmitting(false)
@@ -137,13 +131,12 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isCompl
                     <button
                       key={val}
                       type="button"
-                      disabled={isCompleted}
                       onClick={() => handleRatingChange(q.id, val)}
-                      className={`w-10 h-10 rounded-md border text-sm font-medium transition-colors ${
+                      className={`w-10 h-10 rounded-md border text-sm font-medium transition-colors cursor-pointer ${
                         responses[q.id]?.rating_value === val
                           ? 'bg-primary text-primary-foreground'
                           : 'hover:bg-accent'
-                      } ${isCompleted ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      }`}
                     >
                       {val}
                     </button>
@@ -159,7 +152,6 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isCompl
                   onChange={(e) => handleTextChange(q.id, e.target.value)}
                   placeholder="Type your response..."
                   rows={4}
-                  disabled={isCompleted}
                 />
               </div>
             )}
@@ -167,16 +159,14 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isCompl
         </Card>
       ))}
 
-      {!isCompleted && (
-        <div className="flex gap-3 pt-2">
-          <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? 'Submitting...' : 'Submit Review'}
-          </Button>
-          <p className="text-sm text-muted-foreground self-center">
-            Your responses are saved automatically.
-          </p>
-        </div>
-      )}
+      <div className="flex gap-3 pt-2">
+        <Button onClick={handleSubmit} disabled={submitting}>
+          {submitting ? 'Submitting...' : isSubmitted ? 'Update Review' : 'Submit Review'}
+        </Button>
+        <p className="text-sm text-muted-foreground self-center">
+          Your responses are saved automatically.
+        </p>
+      </div>
     </div>
   )
 }
