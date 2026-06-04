@@ -23,7 +23,7 @@ export function NavSidebar({ user }: { user: User }) {
     { href: '/dashboard', label: 'My Reviews' },
     ...(user.role === 'admin'
       ? [
-          { href: '/dashboard/admin', label: 'Admin' },
+          { href: '/dashboard/admin', label: 'Review Cycles' },
           { href: '/dashboard/admin/users', label: 'Team Roster' },
         ]
       : []),
