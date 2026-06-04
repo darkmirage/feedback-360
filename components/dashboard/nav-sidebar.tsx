@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from '@/actions/auth'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import type { Database } from '@/lib/types/database'
 import { cn } from '@/lib/utils'
 
@@ -21,20 +20,19 @@ export function NavSidebar({ user }: { user: User }) {
   ]
 
   return (
-    <aside className="flex w-64 flex-col border-r bg-muted/30 p-4">
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold">360 Feedback</h1>
-        <p className="text-sm text-muted-foreground truncate">{user.full_name}</p>
+    <aside className="flex w-56 flex-col border-r border-border/60 bg-sidebar px-3 py-4">
+      <div className="mb-8 px-3">
+        <h1 className="text-sm font-semibold tracking-tight">360 Feedback</h1>
       </div>
 
-      <nav className="flex flex-col gap-1">
+      <nav className="flex flex-col gap-0.5">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              'rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent',
-              pathname === item.href && 'bg-accent'
+              'rounded-md px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-accent',
+              pathname === item.href && 'text-foreground bg-accent'
             )}
           >
             {item.label}
@@ -42,11 +40,12 @@ export function NavSidebar({ user }: { user: User }) {
         ))}
       </nav>
 
-      <Separator className="my-4" />
-
-      <div className="mt-auto">
+      <div className="mt-auto flex items-center justify-between px-3">
+        <p className="text-xs text-muted-foreground truncate max-w-[120px]">
+          {user.full_name}
+        </p>
         <form action={signOut}>
-          <Button variant="ghost" size="sm" className="w-full justify-start">
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground px-2">
             Sign out
           </Button>
         </form>

@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function LoginPage() {
   const handleLogin = async () => {
@@ -16,18 +15,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">360 Feedback</CardTitle>
-          <CardDescription>Sign in to access your reviews</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={handleLogin} className="w-full" size="lg">
-            Sign in with Google
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="w-full max-w-xs space-y-8 text-center">
+        <div className="space-y-2">
+          <h1 className="text-xl font-semibold tracking-tight">360 Feedback</h1>
+          <p className="text-sm text-muted-foreground">
+            Sign in to access your reviews
+          </p>
+        </div>
+        <Button onClick={handleLogin} className="w-full" size="lg">
+          Continue with Google
+        </Button>
+      </div>
     </div>
   )
 }
