@@ -22,13 +22,13 @@ export default async function MyResultsPage({
   const user = await requireAuth()
 
   const cycle = await getCycle(cycleId)
-  if (cycle.status !== 'results_published') redirect('/dashboard')
+  if (cycle.status !== 'results_published') redirect('/')
 
   let results
   try {
     results = await getResultsForSubject(cycleId, user.email)
   } catch {
-    redirect('/dashboard')
+    redirect('/')
   }
 
   return (

@@ -118,7 +118,7 @@ export function ReviewForm({ assignmentId, questions, existingResponses, isSubmi
 
       await submitReview(assignmentId)
       toast.success('Review submitted')
-      router.push('/dashboard')
+      router.push('/')
     } catch {
       toast.error('Failed to submit review')
     } finally {

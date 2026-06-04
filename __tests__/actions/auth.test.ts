@@ -80,7 +80,7 @@ describe('requireAdmin', () => {
     vi.clearAllMocks()
   })
 
-  it('redirects non-admin to /dashboard', async () => {
+  it('redirects non-admin to /', async () => {
     const profile = { id: 'user-1', email: 'test@test.com', full_name: 'Test User', role: 'user' }
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
     const singleMock = vi.fn(() => Promise.resolve({ data: profile, error: null }))
@@ -92,7 +92,7 @@ describe('requireAdmin', () => {
     try {
       await requireAdmin()
     } catch (e) {
-      expect((e as RedirectError).url).toBe('/dashboard')
+      expect((e as RedirectError).url).toBe('/')
     }
   })
 

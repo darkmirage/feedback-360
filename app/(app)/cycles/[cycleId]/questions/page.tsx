@@ -88,7 +88,7 @@ export default function QuestionsPage() {
         })
       }
       toast.success('Questions saved')
-      router.push(`/dashboard/admin/cycles/${cycleId}`)
+      router.push(`/cycles/${cycleId}`)
     } catch {
       toast.error('Failed to save questions')
     } finally {

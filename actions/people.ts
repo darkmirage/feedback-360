@@ -35,7 +35,7 @@ export async function addPerson(params: {
     if (error.code === '23505') throw new Error('A person with this email already exists')
     throw new Error(error.message)
   }
-  revalidatePath('/dashboard/admin/users')
+  revalidatePath('/team')
 }
 
 export async function importPeopleCSV(rows: Array<{ email: string; first_name: string; last_name: string }>) {
@@ -57,7 +57,7 @@ export async function importPeopleCSV(rows: Array<{ email: string; first_name: s
     .upsert(cleaned, { onConflict: 'email' })
 
   if (error) throw new Error(error.message)
-  revalidatePath('/dashboard/admin/users')
+  revalidatePath('/team')
   return cleaned.length
 }
 
@@ -71,7 +71,7 @@ export async function deletePerson(personId: string) {
     .eq('id', personId)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/dashboard/admin/users')
+  revalidatePath('/team')
 }
 
 export async function updatePerson(personId: string, params: {
@@ -90,5 +90,5 @@ export async function updatePerson(personId: string, params: {
     .eq('id', personId)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/dashboard/admin/users')
+  revalidatePath('/team')
 }

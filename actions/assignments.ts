@@ -40,7 +40,7 @@ export async function createAssignment(params: {
     })
 
   if (error) throw new Error(error.message)
-  revalidatePath(`/dashboard/admin/cycles/${params.review_cycle_id}/matrix`)
+  revalidatePath(`/cycles/${params.review_cycle_id}/matrix`)
 }
 
 export async function deleteAssignment(assignmentId: string, cycleId: string) {
@@ -53,7 +53,7 @@ export async function deleteAssignment(assignmentId: string, cycleId: string) {
     .eq('id', assignmentId)
 
   if (error) throw new Error(error.message)
-  revalidatePath(`/dashboard/admin/cycles/${cycleId}/matrix`)
+  revalidatePath(`/cycles/${cycleId}/matrix`)
 }
 
 export async function getMyAssignments() {

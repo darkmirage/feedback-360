@@ -20,11 +20,11 @@ export function NavSidebar({ user }: { user: User }) {
   }
 
   const navItems = [
-    { href: '/dashboard', label: 'My Reviews' },
+    { href: '/', label: 'My Reviews' },
     ...(user.role === 'admin'
       ? [
-          { href: '/dashboard/admin', label: 'Review Cycles' },
-          { href: '/dashboard/admin/users', label: 'Team Roster' },
+          { href: '/cycles', label: 'Review Cycles' },
+          { href: '/team', label: 'Team Roster' },
         ]
       : []),
   ]

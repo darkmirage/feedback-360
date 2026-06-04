@@ -21,11 +21,11 @@ export default async function ReviewPage({
     .eq('id', assignmentId)
     .single()
 
-  if (error || !assignment) redirect('/dashboard')
-  if (assignment.reviewer_email.toLowerCase() !== user.email.toLowerCase()) redirect('/dashboard')
+  if (error || !assignment) redirect('/')
+  if (assignment.reviewer_email.toLowerCase() !== user.email.toLowerCase()) redirect('/')
 
   const cycle = assignment.review_cycle as unknown as { id: string; title: string; status: string }
-  if (cycle.status !== 'active') redirect('/dashboard')
+  if (cycle.status !== 'active') redirect('/')
 
   const subjectName = assignment.subject_name ?? assignment.subject_email
   const questions = await getQuestions(cycle.id)

@@ -19,7 +19,7 @@ export default async function AdminPage() {
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Review Cycles</h2>
-        <Link href="/dashboard/admin/cycles/new">
+        <Link href="/cycles/new">
           <Button>New Cycle</Button>
         </Link>
       </div>
@@ -33,7 +33,7 @@ export default async function AdminPage() {
       ) : (
         <div className="space-y-3">
           {cycles.map((cycle) => (
-            <Link key={cycle.id} href={`/dashboard/admin/cycles/${cycle.id}`}>
+            <Link key={cycle.id} href={`/cycles/${cycle.id}`}>
               <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -52,7 +52,7 @@ export default async function AdminPage() {
         </div>
       )}
 
-      <Link href="/dashboard/admin/users">
+      <Link href="/team">
         <Button variant="outline">Team Roster</Button>
       </Link>
     </div>

@@ -88,7 +88,7 @@ export async function upsertQuestion(params: {
     if (error) throw new Error(error.message)
   }
 
-  revalidatePath(`/dashboard/admin/cycles/${params.review_cycle_id}`)
+  revalidatePath(`/cycles/${params.review_cycle_id}`)
 }
 
 export async function deleteQuestion(questionId: string, cycleId: string) {
@@ -103,5 +103,5 @@ export async function deleteQuestion(questionId: string, cycleId: string) {
     .eq('id', questionId)
 
   if (error) throw new Error(error.message)
-  revalidatePath(`/dashboard/admin/cycles/${cycleId}`)
+  revalidatePath(`/cycles/${cycleId}`)
 }

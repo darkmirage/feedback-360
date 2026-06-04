@@ -55,7 +55,7 @@ export default async function CycleDetailPage({
             <CardTitle>{questions.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <Link href={`/dashboard/admin/cycles/${cycleId}/questions`}>
+            <Link href={`/cycles/${cycleId}/questions`}>
               <Button variant="outline" size="sm">Edit Questions</Button>
             </Link>
           </CardContent>
@@ -67,7 +67,7 @@ export default async function CycleDetailPage({
             <CardTitle>{totalCount}</CardTitle>
           </CardHeader>
           <CardContent>
-            <Link href={`/dashboard/admin/cycles/${cycleId}/matrix`}>
+            <Link href={`/cycles/${cycleId}/matrix`}>
               <Button variant="outline" size="sm">Edit Matrix</Button>
             </Link>
           </CardContent>
@@ -97,7 +97,7 @@ export default async function CycleDetailPage({
       )}
 
       {(cycle.status === 'closed' || cycle.status === 'results_published') && (
-        <Link href={`/dashboard/admin/cycles/${cycleId}/results`}>
+        <Link href={`/cycles/${cycleId}/results`}>
           <Button>View All Results</Button>
         </Link>
       )}

@@ -59,7 +59,7 @@ export default async function DashboardPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Link href={`/dashboard/review/${a.id}`}>
+                    <Link href={`/review/${a.id}`}>
                       <Button size="sm">Start Review</Button>
                     </Link>
                   </CardContent>
@@ -91,7 +91,7 @@ export default async function DashboardPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Link href={`/dashboard/review/${a.id}`}>
+                    <Link href={`/review/${a.id}`}>
                       <Button size="sm" variant="outline">Edit Review</Button>
                     </Link>
                   </CardContent>
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
                   <CardDescription>Results are available</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Link href={`/dashboard/results/${cycle.id}`}>
+                  <Link href={`/results/${cycle.id}`}>
                     <Button size="sm" variant="outline">View Results</Button>
                   </Link>
                 </CardContent>

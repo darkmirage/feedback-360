@@ -31,7 +31,7 @@ export function DeleteCycleButton({ cycleId }: { cycleId: string }) {
           try {
             await deleteCycle(cycleId)
             toast.success('Cycle deleted')
-            router.push('/dashboard/admin')
+            router.push('/cycles')
           } catch {
             toast.error('Failed to delete cycle')
             setLoading(false)

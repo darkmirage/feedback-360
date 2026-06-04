@@ -61,5 +61,5 @@ export async function submitReview(assignmentId: string) {
     .eq('id', assignmentId)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/dashboard')
+  revalidatePath('/')
 }

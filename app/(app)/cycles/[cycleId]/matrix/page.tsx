@@ -140,7 +140,7 @@ export default function MatrixPage() {
             Select who is being reviewed, then assign their reviewers.
           </p>
         </div>
-        <Link href={`/dashboard/admin/cycles/${cycleId}`}>
+        <Link href={`/cycles/${cycleId}`}>
           <Button variant="outline">Back to Cycle</Button>
         </Link>
       </div>
@@ -174,7 +174,7 @@ export default function MatrixPage() {
       {people.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            No team members in roster. <a href="/dashboard/admin/users" className="underline">Add people first.</a>
+            No team members in roster. <a href="/team" className="underline">Add people first.</a>
           </CardContent>
         </Card>
       )}

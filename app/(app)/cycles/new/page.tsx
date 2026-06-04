@@ -22,7 +22,7 @@ export default function NewCyclePage() {
     try {
       const cycle = await createCycle(title.trim())
       toast.success('Cycle created')
-      router.push(`/dashboard/admin/cycles/${cycle.id}`)
+      router.push(`/cycles/${cycle.id}`)
     } catch (err) {
       toast.error('Failed to create cycle')
     } finally {

@@ -18,7 +18,7 @@ export async function createCycle(title: string) {
     .single()
 
   if (error) throw new Error(error.message)
-  revalidatePath('/dashboard/admin')
+  revalidatePath('/cycles')
   return data
 }
 
@@ -57,9 +57,9 @@ export async function transitionCycle(cycleId: string, currentStatus: ReviewCycl
     .eq('id', cycleId)
 
   if (error) throw new Error(error.message)
-  revalidatePath(`/dashboard/admin/cycles/${cycleId}`)
-  revalidatePath('/dashboard/admin')
-  revalidatePath('/dashboard')
+  revalidatePath(`/cycles/${cycleId}`)
+  revalidatePath('/cycles')
+  revalidatePath('/')
   return nextStatus
 }
 
@@ -83,9 +83,9 @@ export async function revertCycleToDraft(cycleId: string) {
     .eq('id', cycleId)
 
   if (error) throw new Error(error.message)
-  revalidatePath(`/dashboard/admin/cycles/${cycleId}`)
-  revalidatePath('/dashboard/admin')
-  revalidatePath('/dashboard')
+  revalidatePath(`/cycles/${cycleId}`)
+  revalidatePath('/cycles')
+  revalidatePath('/')
 }
 
 export async function deleteCycle(cycleId: string) {
@@ -98,6 +98,6 @@ export async function deleteCycle(cycleId: string) {
     .eq('id', cycleId)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/dashboard/admin')
-  revalidatePath('/dashboard')
+  revalidatePath('/cycles')
+  revalidatePath('/')
 }
