@@ -141,7 +141,7 @@ returns boolean as $$
   select exists(
     select 1 from users where id = auth.uid() and role = 'admin'
   );
-$$ language plpgsql security definer stable;
+$$ language sql security definer stable;
 
 -- USERS
 create policy "users_select" on users for select using (true);
