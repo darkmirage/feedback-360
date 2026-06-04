@@ -2,7 +2,6 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAuth } from './auth'
-import { ANONYMITY_THRESHOLD, ANONYMITY_EXEMPT_RELATIONSHIPS } from '@/lib/constants'
 import type { RelationshipType } from '@/lib/types/database'
 
 interface AggregatedGroup {
@@ -34,7 +33,7 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
 
   const admin = createAdminClient()
 
-  // Verify cycle is published
+  // Verify cycle status — admin can view when closed or published, subjects only when published
   const { data: cycle, error: cycleError } = await admin
     .from('review_cycles')
     .select('status')
@@ -42,8 +41,11 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
     .single()
 
   if (cycleError || !cycle) throw new Error('Cycle not found')
-  if (cycle.status !== 'results_published') {
+  if (!isAdmin && cycle.status !== 'results_published') {
     throw new Error('Results are not yet published')
+  }
+  if (isAdmin && cycle.status !== 'closed' && cycle.status !== 'results_published') {
+    throw new Error('Cycle must be closed or published to view results')
   }
 
   // Get all completed assignments for this subject in this cycle
@@ -76,24 +78,6 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
   const groups: AggregatedGroup[] = []
 
   for (const [relationship, assignmentIds] of Object.entries(byRelationship)) {
-    // Self and manager reviews are always shown; other groups must meet threshold
-    if (!ANONYMITY_EXEMPT_RELATIONSHIPS.includes(relationship) && assignmentIds.length < ANONYMITY_THRESHOLD) {
-      if (!isAdmin) continue
-      // Admin can see that a group was suppressed but not the content
-      groups.push({
-        relationship: relationship as RelationshipType,
-        responseCount: assignmentIds.length,
-        questions: questions.map((q) => ({
-          question_id: q.id,
-          question_text: q.question_text,
-          question_order: q.question_order,
-          openTextResponses: [],
-          averageRating: null,
-        })),
-      })
-      continue
-    }
-
     // Get all responses for these assignments
     const { data: responses, error: respError } = await admin
       .from('responses')
@@ -129,16 +113,20 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
     })
   }
 
-  // Get subject name (may not exist if user hasn't signed in)
-  const { data: subject } = await admin
-    .from('users')
-    .select('full_name')
+  // Get subject name from people table
+  const { data: person } = await admin
+    .from('people')
+    .select('first_name, last_name')
     .eq('email', subjectEmail.toLowerCase())
     .single()
 
+  const subjectName = person
+    ? `${person.first_name} ${person.last_name}`.trim() || subjectEmail
+    : subjectEmail
+
   return {
     subject_email: subjectEmail,
-    subject_name: subject?.full_name ?? subjectEmail,
+    subject_name: subjectName,
     groups,
   } satisfies SubjectResults
 }

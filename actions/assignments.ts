@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireAuth } from './auth'
-import { ANONYMITY_THRESHOLD, ANONYMITY_EXEMPT_RELATIONSHIPS } from '@/lib/constants'
 import type { RelationshipType } from '@/lib/types/database'
 import { revalidatePath } from 'next/cache'
 
@@ -71,32 +70,3 @@ export async function getMyAssignments() {
   return data
 }
 
-export async function getMatrixWarnings(cycleId: string) {
-  await requireAdmin()
-  const admin = createAdminClient()
-
-  const { data: assignments, error } = await admin
-    .from('review_assignments')
-    .select('subject_email, relationship')
-    .eq('review_cycle_id', cycleId)
-    .not('relationship', 'in', `(${ANONYMITY_EXEMPT_RELATIONSHIPS.join(',')})`)
-
-  if (error) throw new Error(error.message)
-
-  // Group by subject + relationship and find groups below threshold
-  const groups: Record<string, number> = {}
-  for (const a of assignments) {
-    const key = `${a.subject_email}:${a.relationship}`
-    groups[key] = (groups[key] || 0) + 1
-  }
-
-  const warnings: Array<{ subject_email: string; relationship: string; count: number }> = []
-  for (const [key, count] of Object.entries(groups)) {
-    if (count < ANONYMITY_THRESHOLD) {
-      const [subject_email, relationship] = key.split(':')
-      warnings.push({ subject_email, relationship, count })
-    }
-  }
-
-  return warnings
-}

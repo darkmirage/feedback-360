@@ -2,7 +2,7 @@ import { getCycle } from '@/actions/cycles'
 import { getAllSubjectResults, getResultsForSubject } from '@/actions/results'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { RELATIONSHIP_LABELS, ANONYMITY_THRESHOLD, ANONYMITY_EXEMPT_RELATIONSHIPS } from '@/lib/constants'
+import { RELATIONSHIP_LABELS } from '@/lib/constants'
 
 export default async function AdminResultsPage({
   params,
@@ -42,11 +42,6 @@ export default async function AdminResultsPage({
                       <span className="text-sm text-muted-foreground">
                         {group.responseCount} response{group.responseCount === 1 ? '' : 's'}
                       </span>
-                      {group.responseCount < ANONYMITY_THRESHOLD && !ANONYMITY_EXEMPT_RELATIONSHIPS.includes(group.relationship) && (
-                        <Badge variant="destructive" className="text-xs">
-                          Suppressed (below threshold)
-                        </Badge>
-                      )}
                     </div>
 
                     {group.questions.map((q) => (
@@ -66,11 +61,7 @@ export default async function AdminResultsPage({
                             ))}
                           </ul>
                         ) : (
-                          <p className="text-sm text-muted-foreground italic">
-                            {group.responseCount < ANONYMITY_THRESHOLD && !ANONYMITY_EXEMPT_RELATIONSHIPS.includes(group.relationship)
-                              ? 'Content hidden — below anonymity threshold'
-                              : 'No responses'}
-                          </p>
+                          <p className="text-sm text-muted-foreground italic">No responses</p>
                         )}
                       </div>
                     ))}

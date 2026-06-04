@@ -128,55 +128,7 @@ describe('getResultsForSubject', () => {
     expect(selfGroup!.questions[0].openTextResponses).toContain('I am good at X')
   })
 
-  it('suppresses non-self group below threshold for regular user', async () => {
-    mockRequireAuth.mockResolvedValue({
-      id: 'user-1',
-      email: 'subject@test.com',
-      role: 'user',
-    })
-    setupAdminQueries({
-      assignments: [
-        { id: 'a1', relationship: 'peer', completed_at: '2026-01-01' },
-        { id: 'a2', relationship: 'peer', completed_at: '2026-01-01' },
-        // Only 2 peer reviewers — below threshold of 3
-      ],
-      questions: [
-        { id: 'q1', question_text: 'Strengths?', question_order: 1, is_open_ended: true, is_rating: false },
-      ],
-    })
-
-    const result = await getResultsForSubject('cycle-1', 'subject@test.com')
-    const peerGroup = result.groups.find((g) => g.relationship === 'peer')
-    // Regular user should not see this group at all
-    expect(peerGroup).toBeUndefined()
-  })
-
-  it('shows suppressed group to admin without content', async () => {
-    mockRequireAuth.mockResolvedValue({
-      id: 'admin-1',
-      email: 'admin@test.com',
-      role: 'admin',
-    })
-    setupAdminQueries({
-      assignments: [
-        { id: 'a1', relationship: 'peer', completed_at: '2026-01-01' },
-        { id: 'a2', relationship: 'peer', completed_at: '2026-01-01' },
-      ],
-      questions: [
-        { id: 'q1', question_text: 'Strengths?', question_order: 1, is_open_ended: true, is_rating: false },
-      ],
-    })
-
-    const result = await getResultsForSubject('cycle-1', 'subject@test.com')
-    const peerGroup = result.groups.find((g) => g.relationship === 'peer')
-    expect(peerGroup).toBeDefined()
-    expect(peerGroup!.responseCount).toBe(2)
-    // Admin sees the group exists but content is empty
-    expect(peerGroup!.questions[0].openTextResponses).toHaveLength(0)
-    expect(peerGroup!.questions[0].averageRating).toBeNull()
-  })
-
-  it('returns full data for group meeting threshold', async () => {
+  it('returns all feedback regardless of group size', async () => {
     mockRequireAuth.mockResolvedValue({
       id: 'user-1',
       email: 'subject@test.com',

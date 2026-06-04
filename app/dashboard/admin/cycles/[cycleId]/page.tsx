@@ -1,6 +1,6 @@
 import { getCycle, transitionCycle } from '@/actions/cycles'
 import { getQuestions } from '@/actions/questions'
-import { getAssignmentsForCycle, getMatrixWarnings } from '@/actions/assignments'
+import { getAssignmentsForCycle } from '@/actions/assignments'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,7 +19,6 @@ export default async function CycleDetailPage({
   const cycle = await getCycle(cycleId)
   const questions = await getQuestions(cycleId)
   const assignments = await getAssignmentsForCycle(cycleId)
-  const warnings = await getMatrixWarnings(cycleId)
 
   const completedCount = assignments.filter((a: Record<string, unknown>) => a.completed_at).length
   const totalCount = assignments.length
@@ -80,26 +79,6 @@ export default async function CycleDetailPage({
         </Card>
       </div>
 
-      {warnings.length > 0 && (
-        <Card className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
-          <CardHeader>
-            <CardTitle className="text-base">Anonymity Warnings</CardTitle>
-            <CardDescription>
-              These groups have fewer than 3 reviewers. Their responses will be suppressed in results.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside text-sm space-y-1">
-              {warnings.map((w, i) => (
-                <li key={i}>
-                  {w.subject_email} — {w.relationship} group: only {w.count} reviewer{w.count === 1 ? '' : 's'}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-
       {nextStatus && (
         <Card>
           <CardContent className="pt-6 flex items-center justify-between">
@@ -118,7 +97,7 @@ export default async function CycleDetailPage({
         </Card>
       )}
 
-      {cycle.status === 'results_published' && (
+      {(cycle.status === 'closed' || cycle.status === 'results_published') && (
         <Link href={`/dashboard/admin/cycles/${cycleId}/results`}>
           <Button>View All Results</Button>
         </Link>

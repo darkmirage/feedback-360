@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { getAssignmentsForCycle, createAssignment, deleteAssignment, getMatrixWarnings } from '@/actions/assignments'
+import { getAssignmentsForCycle, createAssignment, deleteAssignment } from '@/actions/assignments'
 import { getPeople } from '@/actions/people'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { RELATIONSHIP_LABELS, ANONYMITY_THRESHOLD } from '@/lib/constants'
+import { RELATIONSHIP_LABELS } from '@/lib/constants'
 import type { RelationshipType } from '@/lib/types/database'
 import { toast } from 'sonner'
 
@@ -30,12 +30,6 @@ interface Assignment {
   completed_at: string | null
 }
 
-interface Warning {
-  subject_email: string
-  relationship: string
-  count: number
-}
-
 function personName(p: Person) {
   const name = `${p.first_name} ${p.last_name}`.trim()
   return name || p.email
@@ -46,7 +40,6 @@ export default function MatrixPage() {
   const cycleId = params.cycleId as string
   const [people, setPeople] = useState<Person[]>([])
   const [assignments, setAssignments] = useState<Assignment[]>([])
-  const [warnings, setWarnings] = useState<Warning[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null)
 
@@ -56,10 +49,9 @@ export default function MatrixPage() {
 
   const loadData = async () => {
     try {
-      const [pData, aData, wData] = await Promise.all([
+      const [pData, aData] = await Promise.all([
         getPeople(),
         getAssignmentsForCycle(cycleId),
-        getMatrixWarnings(cycleId),
       ])
       setPeople(pData as Person[])
       setAssignments(aData.map((d: Record<string, unknown>) => ({
@@ -71,7 +63,6 @@ export default function MatrixPage() {
         relationship: d.relationship as RelationshipType,
         completed_at: d.completed_at as string | null,
       })))
-      setWarnings(wData)
     } catch {
       toast.error('Failed to load data')
     } finally {
@@ -83,7 +74,6 @@ export default function MatrixPage() {
 
   const subjectEmails = [...new Set(assignments.map((a) => a.subject_email))]
   const assignmentsBySubject = (email: string) => assignments.filter((a) => a.subject_email === email)
-  const warningsForSubject = (email: string) => warnings.filter((w) => w.subject_email === email)
   const personByEmail = (email: string) => people.find((p) => p.email === email)
 
   const handleAddReviewer = async (subjectEmail: string) => {
@@ -196,7 +186,6 @@ export default function MatrixPage() {
             const subjectPerson = personByEmail(subjectEmail)
             const subjectName = subjectPerson ? personName(subjectPerson) : subjectEmail
             const subjectAssignments = assignmentsBySubject(subjectEmail)
-            const subjectWarnings = warningsForSubject(subjectEmail)
             const isExpanded = expandedSubject === subjectEmail
             const reviewerCount = subjectAssignments.filter((a) => a.relationship !== 'self').length
 
@@ -212,11 +201,6 @@ export default function MatrixPage() {
                       <CardDescription>{subjectEmail}</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      {subjectWarnings.length > 0 && (
-                        <Badge variant="outline" className="border-yellow-500 text-yellow-700">
-                          Anonymity risk
-                        </Badge>
-                      )}
                       <Badge variant="secondary">
                         {reviewerCount} reviewer{reviewerCount === 1 ? '' : 's'}
                       </Badge>
@@ -227,17 +211,6 @@ export default function MatrixPage() {
 
                 {isExpanded && (
                   <CardContent className="space-y-4">
-                    {/* Warnings */}
-                    {subjectWarnings.length > 0 && (
-                      <div className="rounded-md bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-500/30 p-3 text-sm">
-                        {subjectWarnings.map((w, i) => (
-                          <p key={i}>
-                            {RELATIONSHIP_LABELS[w.relationship]} group has {w.count} reviewer{w.count === 1 ? '' : 's'} (need {ANONYMITY_THRESHOLD} for anonymity)
-                          </p>
-                        ))}
-                      </div>
-                    )}
-
                     {/* Current reviewers */}
                     {subjectAssignments.length > 0 && (
                       <div className="space-y-1">
