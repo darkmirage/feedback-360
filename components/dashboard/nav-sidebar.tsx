@@ -15,7 +15,10 @@ export function NavSidebar({ user }: { user: User }) {
   const navItems = [
     { href: '/dashboard', label: 'My Reviews' },
     ...(user.role === 'admin'
-      ? [{ href: '/dashboard/admin', label: 'Admin' }]
+      ? [
+          { href: '/dashboard/admin', label: 'Admin' },
+          { href: '/dashboard/admin/users', label: 'Team Roster' },
+        ]
       : []),
   ]
 

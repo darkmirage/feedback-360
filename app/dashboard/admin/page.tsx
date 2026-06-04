@@ -53,7 +53,7 @@ export default async function AdminPage() {
       )}
 
       <Link href="/dashboard/admin/users">
-        <Button variant="outline">Manage Users</Button>
+        <Button variant="outline">Team Roster</Button>
       </Link>
     </div>
   )
