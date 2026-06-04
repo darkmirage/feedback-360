@@ -1,5 +1,8 @@
 export const ANONYMITY_THRESHOLD = 3
 
+// Relationship types exempt from anonymity threshold — feedback is shown regardless of group size
+export const ANONYMITY_EXEMPT_RELATIONSHIPS = ['self', 'manager']
+
 export const RELATIONSHIP_LABELS: Record<string, string> = {
   self: 'Self',
   peer: 'Peer',

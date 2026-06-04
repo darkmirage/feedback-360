@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireAuth } from './auth'
-import { ANONYMITY_THRESHOLD } from '@/lib/constants'
+import { ANONYMITY_THRESHOLD, ANONYMITY_EXEMPT_RELATIONSHIPS } from '@/lib/constants'
 import type { RelationshipType } from '@/lib/types/database'
 import { revalidatePath } from 'next/cache'
 
@@ -79,7 +79,7 @@ export async function getMatrixWarnings(cycleId: string) {
     .from('review_assignments')
     .select('subject_email, relationship')
     .eq('review_cycle_id', cycleId)
-    .neq('relationship', 'self')
+    .not('relationship', 'in', `(${ANONYMITY_EXEMPT_RELATIONSHIPS.join(',')})`)
 
   if (error) throw new Error(error.message)
 

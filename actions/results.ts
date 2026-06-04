@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAuth } from './auth'
-import { ANONYMITY_THRESHOLD } from '@/lib/constants'
+import { ANONYMITY_THRESHOLD, ANONYMITY_EXEMPT_RELATIONSHIPS } from '@/lib/constants'
 import type { RelationshipType } from '@/lib/types/database'
 
 interface AggregatedGroup {
@@ -76,9 +76,8 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
   const groups: AggregatedGroup[] = []
 
   for (const [relationship, assignmentIds] of Object.entries(byRelationship)) {
-    // Self-reviews always shown (it's your own response)
-    // Other groups must meet threshold
-    if (relationship !== 'self' && assignmentIds.length < ANONYMITY_THRESHOLD) {
+    // Self and manager reviews are always shown; other groups must meet threshold
+    if (!ANONYMITY_EXEMPT_RELATIONSHIPS.includes(relationship) && assignmentIds.length < ANONYMITY_THRESHOLD) {
       if (!isAdmin) continue
       // Admin can see that a group was suppressed but not the content
       groups.push({
