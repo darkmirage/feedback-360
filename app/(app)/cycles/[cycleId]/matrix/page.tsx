@@ -286,12 +286,15 @@ export default function MatrixPage() {
 
       {/* Reviewer workload summary */}
       {assignments.length > 0 && (() => {
-        const workload = new Map<string, number>()
+        const workload = new Map<string, string[]>()
         for (const a of assignments) {
           if (a.relationship === 'self') continue
-          workload.set(a.reviewer_email, (workload.get(a.reviewer_email) ?? 0) + 1)
+          const subjects = workload.get(a.reviewer_email) ?? []
+          const subjectPerson = personByEmail(a.subject_email)
+          subjects.push(subjectPerson ? personName(subjectPerson) : a.subject_email)
+          workload.set(a.reviewer_email, subjects)
         }
-        const sorted = [...workload.entries()].sort((a, b) => b[1] - a[1])
+        const sorted = [...workload.entries()].sort((a, b) => b[1].length - a[1].length)
         if (sorted.length === 0) return null
         return (
           <Card>
@@ -301,12 +304,16 @@ export default function MatrixPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-1">
-                {sorted.map(([email, count]) => {
+                {sorted.map(([email, subjects]) => {
                   const person = personByEmail(email)
                   return (
-                    <div key={email} className="flex items-center justify-between py-1.5 text-sm">
+                    <div
+                      key={email}
+                      className="flex items-center justify-between py-1.5 text-sm"
+                      title={subjects.join(', ')}
+                    >
                       <span>{person ? personName(person) : email}</span>
-                      <Badge variant="secondary">{count}</Badge>
+                      <Badge variant="secondary">{subjects.length}</Badge>
                     </div>
                   )
                 })}
