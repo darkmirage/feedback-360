@@ -283,6 +283,38 @@ export default function MatrixPage() {
           })}
         </div>
       )}
+
+      {/* Reviewer workload summary */}
+      {assignments.length > 0 && (() => {
+        const workload = new Map<string, number>()
+        for (const a of assignments) {
+          if (a.relationship === 'self') continue
+          workload.set(a.reviewer_email, (workload.get(a.reviewer_email) ?? 0) + 1)
+        }
+        const sorted = [...workload.entries()].sort((a, b) => b[1] - a[1])
+        if (sorted.length === 0) return null
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Reviewer Workload</CardTitle>
+              <CardDescription>Number of reviews assigned per person (excluding self-reviews)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                {sorted.map(([email, count]) => {
+                  const person = personByEmail(email)
+                  return (
+                    <div key={email} className="flex items-center justify-between py-1.5 text-sm">
+                      <span>{person ? personName(person) : email}</span>
+                      <Badge variant="secondary">{count}</Badge>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })()}
     </div>
   )
 }
