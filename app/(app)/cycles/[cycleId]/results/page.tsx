@@ -3,6 +3,8 @@ import { getAllSubjectResults, getResultsForSubject } from '@/actions/results'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { RELATIONSHIP_LABELS } from '@/lib/constants'
+import Link from 'next/link'
+import { Eye } from 'lucide-react'
 
 export default async function AdminResultsPage({
   params,
@@ -27,7 +29,15 @@ export default async function AdminResultsPage({
         return (
           <Card key={subject.email}>
             <CardHeader>
-              <CardTitle>{subject.full_name}</CardTitle>
+              <CardTitle>
+                <Link
+                  href={`/cycles/${cycleId}/results/${encodeURIComponent(subject.email)}`}
+                  className="inline-flex items-center gap-2 hover:underline"
+                >
+                  {subject.full_name}
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {results.groups.length === 0 ? (
