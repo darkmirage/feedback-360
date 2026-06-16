@@ -96,9 +96,9 @@ export default async function CycleDetailPage({
         </Card>
       )}
 
-      {(cycle.status === 'closed' || cycle.status === 'results_published') && (
+      {cycle.status !== 'draft' && (
         <Link href={`/cycles/${cycleId}/results`}>
-          <Button>View All Results</Button>
+          <Button>{cycle.status === 'results_published' ? 'View All Results' : 'Preview Results'}</Button>
         </Link>
       )}
 
