@@ -52,8 +52,8 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
   if (!isAdmin && cycle.status !== 'results_published') {
     throw new Error('Results are not yet published')
   }
-  if (isAdmin && cycle.status !== 'closed' && cycle.status !== 'results_published') {
-    throw new Error('Cycle must be closed or published to view results')
+  if (isAdmin && cycle.status === 'draft') {
+    throw new Error('Cycle must be active, closed, or published to view results')
   }
 
   // Get all completed assignments for this subject in this cycle
