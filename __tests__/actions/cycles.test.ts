@@ -16,9 +16,11 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => mockAdminClient),
 }))
 
-const mockRequireAdmin = vi.fn()
+const mockRequireCycleAccess = vi.fn()
+const mockRequireAdminOrManager = vi.fn()
 vi.mock('@/actions/auth', () => ({
-  requireAdmin: () => mockRequireAdmin(),
+  requireCycleAccess: (...args: unknown[]) => mockRequireCycleAccess(...args),
+  requireAdminOrManager: () => mockRequireAdminOrManager(),
 }))
 
 import { transitionCycle } from '@/actions/cycles'
@@ -26,7 +28,10 @@ import { transitionCycle } from '@/actions/cycles'
 describe('transitionCycle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockRequireAdmin.mockResolvedValue({ id: 'admin-1', email: 'admin@test.com', role: 'admin' })
+    mockRequireCycleAccess.mockResolvedValue({
+      user: { id: 'admin-1', email: 'admin@test.com', role: 'admin' },
+      cycle: { id: 'cycle-1', status: 'draft', created_by: 'admin-1' },
+    })
     mockAdminFrom.mockImplementation(() => mockQueryChain({ data: null, error: null }))
   })
 
@@ -55,5 +60,10 @@ describe('transitionCycle', () => {
     await expect(
       transitionCycle('cycle-1', 'nonexistent' as never)
     ).rejects.toThrow('Cannot transition from nonexistent')
+  })
+
+  it('calls requireCycleAccess with cycleId', async () => {
+    await transitionCycle('cycle-1', 'draft')
+    expect(mockRequireCycleAccess).toHaveBeenCalledWith('cycle-1')
   })
 })

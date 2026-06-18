@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from './auth'
+import { requireCycleAccess } from './auth'
 import { revalidatePath } from 'next/cache'
 
 async function wipeResponsesForCycle(cycleId: string) {
@@ -56,7 +56,7 @@ export async function upsertQuestion(params: {
   is_rating?: boolean
   is_required?: boolean
 }) {
-  await requireAdmin()
+  await requireCycleAccess(params.review_cycle_id)
   const supabase = await createClient()
 
   // Wipe responses if questions are being modified on a draft cycle
@@ -92,7 +92,7 @@ export async function upsertQuestion(params: {
 }
 
 export async function deleteQuestion(questionId: string, cycleId: string) {
-  await requireAdmin()
+  await requireCycleAccess(cycleId)
   const supabase = await createClient()
 
   await wipeResponsesForCycle(cycleId)

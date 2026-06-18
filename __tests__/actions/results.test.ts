@@ -17,8 +17,10 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 // Mock auth
 const mockRequireAuth = vi.fn()
+const mockRequireCycleAccess = vi.fn()
 vi.mock('@/actions/auth', () => ({
   requireAuth: () => mockRequireAuth(),
+  requireCycleAccess: (...args: unknown[]) => mockRequireCycleAccess(...args),
 }))
 
 import { getResultsForSubject, getAllSubjectResults } from '@/actions/results'
@@ -29,19 +31,18 @@ describe('getResultsForSubject', () => {
   })
 
   function setupAdminQueries(overrides: {
-    cycle?: { status: string }
+    cycle?: { status: string; created_by?: string }
     assignments?: Array<{ id: string; relationship: string; completed_at: string | null }>
     questions?: Array<{ id: string; question_text: string; question_order: number; is_open_ended: boolean; is_rating: boolean }>
     responses?: Array<{ question_id: string; open_text: string | null; rating_value: number | null }>
-    subject?: { full_name: string } | null
+    subject?: { first_name: string; last_name: string } | null
   } = {}) {
-    const cycle = overrides.cycle ?? { status: 'results_published' }
+    const cycle = overrides.cycle ?? { status: 'results_published', created_by: 'admin-1' }
     const assignments = overrides.assignments ?? []
     const questions = overrides.questions ?? []
     const responses = overrides.responses ?? []
-    const subject = overrides.subject === null ? null : (overrides.subject ?? { full_name: 'Test Subject' })
+    const subject = overrides.subject === null ? null : (overrides.subject ?? { first_name: 'Test', last_name: 'Subject' })
 
-    let callCount = 0
     mockAdminFrom.mockImplementation((table: string) => {
       if (table === 'review_cycles') {
         return mockQueryChain({ data: cycle })
@@ -55,36 +56,66 @@ describe('getResultsForSubject', () => {
       if (table === 'responses') {
         return mockQueryChain({ data: responses })
       }
-      if (table === 'users') {
+      if (table === 'people') {
         return mockQueryChain({ data: subject })
       }
       return mockQueryChain({})
     })
   }
 
-  it('rejects non-admin, non-self user', async () => {
+  it('rejects non-admin, non-self, non-owner user', async () => {
     mockRequireAuth.mockResolvedValue({
       id: 'user-1',
       email: 'other@test.com',
       role: 'user',
     })
+    setupAdminQueries({ cycle: { status: 'results_published', created_by: 'admin-1' } })
 
     await expect(
       getResultsForSubject('cycle-1', 'subject@test.com')
     ).rejects.toThrow('You can only view your own results')
   })
 
-  it('rejects unpublished cycle', async () => {
+  it('rejects unpublished cycle for non-owner', async () => {
     mockRequireAuth.mockResolvedValue({
       id: 'user-1',
       email: 'subject@test.com',
       role: 'user',
     })
-    setupAdminQueries({ cycle: { status: 'active' } })
+    setupAdminQueries({ cycle: { status: 'active', created_by: 'admin-1' } })
 
     await expect(
       getResultsForSubject('cycle-1', 'subject@test.com')
     ).rejects.toThrow('Results are not yet published')
+  })
+
+  it('allows manager to view results for own cycle', async () => {
+    mockRequireAuth.mockResolvedValue({
+      id: 'mgr-1',
+      email: 'mgr@test.com',
+      role: 'manager',
+    })
+    setupAdminQueries({
+      cycle: { status: 'active', created_by: 'mgr-1' },
+      assignments: [],
+      questions: [],
+    })
+
+    const result = await getResultsForSubject('cycle-1', 'subject@test.com')
+    expect(result.subject_email).toBe('subject@test.com')
+  })
+
+  it('rejects manager for other manager cycle', async () => {
+    mockRequireAuth.mockResolvedValue({
+      id: 'mgr-1',
+      email: 'mgr@test.com',
+      role: 'manager',
+    })
+    setupAdminQueries({ cycle: { status: 'active', created_by: 'other-mgr' } })
+
+    await expect(
+      getResultsForSubject('cycle-1', 'subject@test.com')
+    ).rejects.toThrow('You can only view your own results')
   })
 
   it('allows self to view their own results', async () => {
@@ -209,14 +240,23 @@ describe('getAllSubjectResults', () => {
     vi.clearAllMocks()
   })
 
-  it('rejects non-admin', async () => {
-    mockRequireAuth.mockResolvedValue({
-      id: 'user-1',
-      email: 'user@test.com',
-      role: 'user',
-    })
+  it('rejects user without cycle access', async () => {
+    mockRequireCycleAccess.mockRejectedValue(new RedirectError('/'))
 
-    await expect(getAllSubjectResults('cycle-1')).rejects.toThrow('Admin only')
+    await expect(getAllSubjectResults('cycle-1')).rejects.toThrow(RedirectError)
+  })
+
+  it('calls requireCycleAccess with cycleId', async () => {
+    mockRequireCycleAccess.mockResolvedValue({
+      user: { id: 'admin-1', email: 'admin@test.com', role: 'admin' },
+      cycle: { id: 'cycle-1', status: 'active', created_by: 'admin-1' },
+    })
+    mockAdminFrom.mockImplementation(() =>
+      mockQueryChain({ data: [] })
+    )
+
+    await getAllSubjectResults('cycle-1')
+    expect(mockRequireCycleAccess).toHaveBeenCalledWith('cycle-1')
   })
 })
 

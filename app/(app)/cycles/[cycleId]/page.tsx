@@ -41,6 +41,7 @@ export default async function CycleDetailPage({
           <h2 className="text-2xl font-bold">{cycle.title}</h2>
           <p className="text-muted-foreground">
             Created {new Date(cycle.created_at).toLocaleDateString()}
+            {cycle.owner?.full_name && ` by ${cycle.owner.full_name}`}
           </p>
         </div>
         <Badge variant="default">

@@ -1,13 +1,17 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { getCurrentUser } from '@/actions/auth'
 import { getPeople, addPerson, importPeopleCSV, deletePerson } from '@/actions/people'
+import { getUsers, updateUserRole } from '@/actions/users'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import type { UserRole } from '@/lib/types/database'
 
 interface Person {
   id: string
@@ -16,9 +20,30 @@ interface Person {
   last_name: string
 }
 
+interface UserEntry {
+  id: string
+  email: string
+  full_name: string
+  role: UserRole
+}
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  admin: 'Admin',
+  manager: 'Manager',
+  user: 'User',
+}
+
+const ROLE_COLORS: Record<UserRole, string> = {
+  admin: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
+  manager: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+  user: '',
+}
+
 export default function RosterPage() {
   const [people, setPeople] = useState<Person[]>([])
+  const [users, setUsers] = useState<UserEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
@@ -27,8 +52,14 @@ export default function RosterPage() {
 
   const loadPeople = async () => {
     try {
-      const data = await getPeople()
+      const [data, user] = await Promise.all([getPeople(), getCurrentUser()])
       setPeople(data as Person[])
+      const admin = user?.role === 'admin'
+      setIsAdmin(admin ?? false)
+      if (admin) {
+        const userData = await getUsers()
+        setUsers(userData as UserEntry[])
+      }
     } catch {
       toast.error('Failed to load roster')
     } finally {
@@ -111,6 +142,17 @@ export default function RosterPage() {
     }
   }
 
+  const handleRoleChange = async (userId: string, role: UserRole) => {
+    try {
+      await updateUserRole(userId, role)
+      toast.success('Role updated')
+      const userData = await getUsers()
+      setUsers(userData as UserEntry[])
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update role')
+    }
+  }
+
   if (loading) return <p className="text-muted-foreground">Loading...</p>
 
   return (
@@ -124,67 +166,71 @@ export default function RosterPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Add Person</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAdd} className="flex flex-wrap gap-3 items-end">
-            <div className="space-y-1 min-w-[140px]">
-              <Label htmlFor="first_name">First name</Label>
-              <Input
-                id="first_name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Jane"
-              />
-            </div>
-            <div className="space-y-1 min-w-[140px]">
-              <Label htmlFor="last_name">Last name</Label>
-              <Input
-                id="last_name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Smith"
-              />
-            </div>
-            <div className="space-y-1 flex-1 min-w-[200px]">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="jane@example.com"
-              />
-            </div>
-            <Button type="submit" disabled={adding}>
-              {adding ? 'Adding...' : 'Add'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Add Person</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdd} className="flex flex-wrap gap-3 items-end">
+              <div className="space-y-1 min-w-[140px]">
+                <Label htmlFor="first_name">First name</Label>
+                <Input
+                  id="first_name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Jane"
+                />
+              </div>
+              <div className="space-y-1 min-w-[140px]">
+                <Label htmlFor="last_name">Last name</Label>
+                <Input
+                  id="last_name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Smith"
+                />
+              </div>
+              <div className="space-y-1 flex-1 min-w-[200px]">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                />
+              </div>
+              <Button type="submit" disabled={adding}>
+                {adding ? 'Adding...' : 'Add'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Import CSV</CardTitle>
-          <CardDescription>
-            Upload a CSV with columns: <code className="text-xs bg-muted px-1 py-0.5 rounded">first_name, last_name, email</code>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            onChange={handleCSV}
-            className="hidden"
-          />
-          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-            Choose CSV file
-          </Button>
-        </CardContent>
-      </Card>
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Import CSV</CardTitle>
+            <CardDescription>
+              Upload a CSV with columns: <code className="text-xs bg-muted px-1 py-0.5 rounded">first_name, last_name, email</code>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleCSV}
+              className="hidden"
+            />
+            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+              Choose CSV file
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="pt-6">
@@ -199,7 +245,7 @@ export default function RosterPage() {
                   <TableHead>First Name</TableHead>
                   <TableHead>Last Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead></TableHead>
+                  {isAdmin && <TableHead></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -208,16 +254,18 @@ export default function RosterPage() {
                     <TableCell className="font-medium">{person.first_name || '—'}</TableCell>
                     <TableCell>{person.last_name || '—'}</TableCell>
                     <TableCell className="text-muted-foreground">{person.email}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => handleDelete(person.id)}
-                      >
-                        Remove
-                      </Button>
-                    </TableCell>
+                    {isAdmin && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => handleDelete(person.id)}
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -225,6 +273,53 @@ export default function RosterPage() {
           )}
         </CardContent>
       </Card>
+
+      {isAdmin && users.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">User Roles</CardTitle>
+            <CardDescription>
+              Manage platform access. Managers can create and run their own review cycles.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium">{u.full_name}</TableCell>
+                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={ROLE_COLORS[u.role]}>
+                        {ROLE_LABELS[u.role]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
+                        className="text-sm border rounded px-2 py-1 bg-background"
+                      >
+                        <option value="user">User</option>
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

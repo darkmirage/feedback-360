@@ -21,7 +21,7 @@ export function NavSidebar({ user }: { user: User }) {
 
   const navItems = [
     { href: '/', label: 'My Reviews' },
-    ...(user.role === 'admin'
+    ...(user.role === 'admin' || user.role === 'manager'
       ? [
           { href: '/cycles', label: 'Review Cycles' },
           { href: '/team', label: 'Team Roster' },

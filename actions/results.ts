@@ -1,7 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAuth } from './auth'
+import { requireAuth, requireCycleAccess } from './auth'
 import type { RelationshipType } from '@/lib/types/database'
 
 interface AggregatedGroup {
@@ -35,24 +35,26 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
   const isAdmin = user.role === 'admin'
   const isSelf = user.email.toLowerCase() === subjectEmail.toLowerCase()
 
-  if (!isAdmin && !isSelf) {
-    throw new Error('You can only view your own results')
-  }
-
   const admin = createAdminClient()
 
-  // Verify cycle status — admin can view when closed or published, subjects only when published
+  // Verify cycle and check ownership for managers
   const { data: cycle, error: cycleError } = await admin
     .from('review_cycles')
-    .select('status')
+    .select('status, created_by')
     .eq('id', cycleId)
     .single()
 
   if (cycleError || !cycle) throw new Error('Cycle not found')
-  if (!isAdmin && cycle.status !== 'results_published') {
+
+  const isCycleOwner = isAdmin || (user.role === 'manager' && cycle.created_by === user.id)
+
+  if (!isCycleOwner && !isSelf) {
+    throw new Error('You can only view your own results')
+  }
+  if (!isCycleOwner && cycle.status !== 'results_published') {
     throw new Error('Results are not yet published')
   }
-  if (isAdmin && cycle.status === 'draft') {
+  if (isCycleOwner && cycle.status === 'draft') {
     throw new Error('Cycle must be active, closed, or published to view results')
   }
 
@@ -189,8 +191,7 @@ export async function getResultsForSubject(cycleId: string, subjectEmail: string
 }
 
 export async function getAllSubjectResults(cycleId: string) {
-  const user = await requireAuth()
-  if (user.role !== 'admin') throw new Error('Admin only')
+  await requireCycleAccess(cycleId)
 
   const admin = createAdminClient()
 

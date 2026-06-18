@@ -1,6 +1,5 @@
-import { getCycle } from '@/actions/cycles'
 import { getResultsForSubject } from '@/actions/results'
-import { requireAdmin } from '@/actions/auth'
+import { requireCycleAccess } from '@/actions/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { RELATIONSHIP_LABELS } from '@/lib/constants'
@@ -20,10 +19,9 @@ export default async function AdminSubjectResultsPage({
   params: Promise<{ cycleId: string; subjectEmail: string }>
 }) {
   const { cycleId, subjectEmail } = await params
-  await requireAdmin()
+  const { cycle } = await requireCycleAccess(cycleId)
 
   const decodedEmail = decodeURIComponent(subjectEmail)
-  const cycle = await getCycle(cycleId)
   const results = await getResultsForSubject(cycleId, decodedEmail)
 
   return (

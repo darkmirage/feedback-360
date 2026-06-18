@@ -8,7 +8,7 @@ export type Json =
 
 export type ReviewCycleStatus = 'draft' | 'active' | 'closed' | 'results_published'
 export type RelationshipType = 'self' | 'peer' | 'direct_report' | 'manager'
-export type UserRole = 'admin' | 'user'
+export type UserRole = 'admin' | 'manager' | 'user'
 
 export interface Database {
   public: {

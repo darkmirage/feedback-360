@@ -2,13 +2,13 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from './auth'
+import { requireAdminOrManager, requireCycleAccess } from './auth'
 import { VALID_TRANSITIONS } from '@/lib/constants'
 import type { ReviewCycleStatus } from '@/lib/types/database'
 import { revalidatePath } from 'next/cache'
 
 export async function createCycle(title: string) {
-  const user = await requireAdmin()
+  const user = await requireAdminOrManager()
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -23,11 +23,19 @@ export async function createCycle(title: string) {
 }
 
 export async function getCycles() {
+  const user = await requireAdminOrManager()
   const supabase = await createClient()
-  const { data, error } = await supabase
+
+  let query = supabase
     .from('review_cycles')
-    .select('*')
+    .select('*, owner:users!created_by(full_name)')
     .order('created_at', { ascending: false })
+
+  if (user.role === 'manager') {
+    query = query.eq('created_by', user.id)
+  }
+
+  const { data, error } = await query
 
   if (error) throw new Error(error.message)
   return data
@@ -37,7 +45,7 @@ export async function getCycle(id: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('review_cycles')
-    .select('*')
+    .select('*, owner:users!created_by(full_name)')
     .eq('id', id)
     .single()
 
@@ -46,7 +54,7 @@ export async function getCycle(id: string) {
 }
 
 export async function transitionCycle(cycleId: string, currentStatus: ReviewCycleStatus) {
-  await requireAdmin()
+  await requireCycleAccess(cycleId)
   const nextStatus = VALID_TRANSITIONS[currentStatus] as ReviewCycleStatus | undefined
   if (!nextStatus) throw new Error(`Cannot transition from ${currentStatus}`)
 
@@ -64,7 +72,7 @@ export async function transitionCycle(cycleId: string, currentStatus: ReviewCycl
 }
 
 export async function revertCycleToDraft(cycleId: string) {
-  await requireAdmin()
+  await requireCycleAccess(cycleId)
   const admin = createAdminClient()
 
   // Only allow reverting from 'active' status
@@ -89,7 +97,7 @@ export async function revertCycleToDraft(cycleId: string) {
 }
 
 export async function deleteCycle(cycleId: string) {
-  await requireAdmin()
+  await requireCycleAccess(cycleId)
   const admin = createAdminClient()
 
   const { error } = await admin

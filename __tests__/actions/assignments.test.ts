@@ -18,10 +18,10 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => mockAdminClient),
 }))
 
-const mockRequireAdmin = vi.fn()
+const mockRequireCycleAccess = vi.fn()
 const mockRequireAuth = vi.fn()
 vi.mock('@/actions/auth', () => ({
-  requireAdmin: () => mockRequireAdmin(),
+  requireCycleAccess: (...args: unknown[]) => mockRequireCycleAccess(...args),
   requireAuth: () => mockRequireAuth(),
 }))
 
@@ -30,7 +30,10 @@ import { createAssignment } from '@/actions/assignments'
 describe('createAssignment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockRequireAdmin.mockResolvedValue({ id: 'admin-1', email: 'admin@test.com', role: 'admin' })
+    mockRequireCycleAccess.mockResolvedValue({
+      user: { id: 'admin-1', email: 'admin@test.com', role: 'admin' },
+      cycle: { id: 'cycle-1', status: 'draft', created_by: 'admin-1' },
+    })
     mockServerFrom.mockImplementation(() =>
       mockQueryChain({ data: null, error: null })
     )
@@ -49,5 +52,16 @@ describe('createAssignment', () => {
     const insertCall = fromCall.insert.mock.calls[0][0]
     expect(insertCall.reviewer_email).toBe('alice@test.com')
     expect(insertCall.subject_email).toBe('bob@test.com')
+  })
+
+  it('calls requireCycleAccess with review_cycle_id', async () => {
+    await createAssignment({
+      review_cycle_id: 'cycle-1',
+      reviewer_email: 'a@test.com',
+      subject_email: 'b@test.com',
+      relationship: 'peer',
+    })
+
+    expect(mockRequireCycleAccess).toHaveBeenCalledWith('cycle-1')
   })
 })

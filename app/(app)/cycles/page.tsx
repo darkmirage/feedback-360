@@ -44,6 +44,7 @@ export default async function AdminPage() {
                   </div>
                   <CardDescription>
                     Created {new Date(cycle.created_at).toLocaleDateString()}
+                    {cycle.owner?.full_name && ` by ${cycle.owner.full_name}`}
                   </CardDescription>
                 </CardHeader>
               </Card>

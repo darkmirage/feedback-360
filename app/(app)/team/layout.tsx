@@ -1,10 +1,10 @@
-import { requireAdmin } from '@/actions/auth'
+import { requireAdminOrManager } from '@/actions/auth'
 
 export default async function TeamLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  await requireAdmin()
+  await requireAdminOrManager()
   return <>{children}</>
 }

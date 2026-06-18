@@ -2,12 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin, requireAuth } from './auth'
+import { requireCycleAccess, requireAuth } from './auth'
 import type { RelationshipType } from '@/lib/types/database'
 import { revalidatePath } from 'next/cache'
 
 export async function getAssignmentsForCycle(cycleId: string) {
-  await requireAdmin()
+  await requireCycleAccess(cycleId)
   const admin = createAdminClient()
 
   // Use the assignment_details view for resolved names
@@ -27,7 +27,7 @@ export async function createAssignment(params: {
   subject_email: string
   relationship: RelationshipType
 }) {
-  await requireAdmin()
+  await requireCycleAccess(params.review_cycle_id)
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -44,7 +44,7 @@ export async function createAssignment(params: {
 }
 
 export async function deleteAssignment(assignmentId: string, cycleId: string) {
-  await requireAdmin()
+  await requireCycleAccess(cycleId)
   const supabase = await createClient()
 
   const { error } = await supabase
