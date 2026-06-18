@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import type { UserRole } from '@/lib/types/database'
 
@@ -25,18 +24,6 @@ interface UserEntry {
   email: string
   full_name: string
   role: UserRole
-}
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Admin',
-  manager: 'Manager',
-  user: 'User',
-}
-
-const ROLE_COLORS: Record<UserRole, string> = {
-  admin: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
-  manager: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-  user: '',
 }
 
 export default function RosterPage() {
@@ -245,81 +232,57 @@ export default function RosterPage() {
                   <TableHead>First Name</TableHead>
                   <TableHead>Last Name</TableHead>
                   <TableHead>Email</TableHead>
+                  {isAdmin && <TableHead>Role</TableHead>}
                   {isAdmin && <TableHead></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {people.map((person) => (
-                  <TableRow key={person.id}>
-                    <TableCell className="font-medium">{person.first_name || '—'}</TableCell>
-                    <TableCell>{person.last_name || '—'}</TableCell>
-                    <TableCell className="text-muted-foreground">{person.email}</TableCell>
-                    {isAdmin && (
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => handleDelete(person.id)}
-                        >
-                          Remove
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
+                {people.map((person) => {
+                  const matchedUser = users.find(
+                    (u) => u.email.toLowerCase() === person.email.toLowerCase()
+                  )
+                  return (
+                    <TableRow key={person.id}>
+                      <TableCell className="font-medium">{person.first_name || '—'}</TableCell>
+                      <TableCell>{person.last_name || '—'}</TableCell>
+                      <TableCell className="text-muted-foreground">{person.email}</TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          {matchedUser ? (
+                            <select
+                              value={matchedUser.role}
+                              onChange={(e) => handleRoleChange(matchedUser.id, e.target.value as UserRole)}
+                              className="text-sm border rounded px-2 py-1 bg-background"
+                            >
+                              <option value="user">User</option>
+                              <option value="manager">Manager</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          ) : (
+                            <span className="text-sm text-muted-foreground italic">No account</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {isAdmin && (
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => handleDelete(person.id)}
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
-
-      {isAdmin && users.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">User Roles</CardTitle>
-            <CardDescription>
-              Manage platform access. Managers can create and run their own review cycles.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.full_name}</TableCell>
-                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={ROLE_COLORS[u.role]}>
-                        {ROLE_LABELS[u.role]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <select
-                        value={u.role}
-                        onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
-                        className="text-sm border rounded px-2 py-1 bg-background"
-                      >
-                        <option value="user">User</option>
-                        <option value="manager">Manager</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }
