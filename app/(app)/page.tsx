@@ -1,6 +1,6 @@
 import { getMyAssignments } from '@/actions/assignments'
 import { requireAuth } from '@/actions/auth'
-import { getCycles } from '@/actions/cycles'
+import { getPublishedCycles } from '@/actions/cycles'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,9 +10,7 @@ import Link from 'next/link'
 export default async function DashboardPage() {
   const user = await requireAuth()
   const assignments = await getMyAssignments()
-  const cycles = await getCycles()
-
-  const publishedCycles = cycles.filter((c) => c.status === 'results_published')
+  const publishedCycles = await getPublishedCycles()
 
   const pendingAssignments = assignments.filter(
     (a) =>

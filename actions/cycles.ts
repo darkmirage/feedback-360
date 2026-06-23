@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdminOrManager, requireCycleAccess } from './auth'
+import { requireAuth, requireAdminOrManager, requireCycleAccess } from './auth'
 import { VALID_TRANSITIONS } from '@/lib/constants'
 import type { ReviewCycleStatus } from '@/lib/types/database'
 import { revalidatePath } from 'next/cache'
@@ -36,6 +36,20 @@ export async function getCycles() {
   }
 
   const { data, error } = await query
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function getPublishedCycles() {
+  await requireAuth()
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('review_cycles')
+    .select('*')
+    .eq('status', 'results_published')
+    .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
   return data
